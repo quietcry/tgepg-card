@@ -1,10 +1,10 @@
 import { tgEpgCard } from "./tgepg-card";
 
 
-customElements.define('tg-epgcard', tgEpgCard);
+customElements.define('tgepg-card', tgEpgCard);
 window.customCards = window.customCards || [];
 window.customCards.push({
-type: "tg-epgcard",
+type: "tgepg-card",
 name: "epg card",
 description: "epg card"
 });

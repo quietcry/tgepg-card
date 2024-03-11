@@ -585,10 +585,10 @@ function hmrAccept(bundle /*: ParcelRequire */ , id /*: string */ ) {
 
 },{}],"8lqZg":[function(require,module,exports) {
 var _tgepgCard = require("./tgepg-card");
-customElements.define("tg-epgcard", (0, _tgepgCard.tgEpgCard));
+customElements.define("tgepg-card", (0, _tgepgCard.tgEpgCard));
 window.customCards = window.customCards || [];
 window.customCards.push({
-    type: "tg-epgcard",
+    type: "tgepg-card",
     name: "epg card",
     description: "epg card"
 });
