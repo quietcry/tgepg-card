@@ -584,6 +584,9 @@ function hmrAccept(bundle /*: ParcelRequire */ , id /*: string */ ) {
 }
 
 },{}],"ciLff":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "tgEpgCard", ()=>tgEpgCard);
 var _tgControlsJs = require("./lib/tgControls.js");
 var _defaultsCardJs = require("./defaults_Card.js");
 var _tgepgDataWorkerJs = require("./tgepg-dataWorker.js");
@@ -1175,15 +1178,8 @@ class tgEpgCard extends (0, _tgControlsJs.tgControls) {
         };
     }
 }
-customElements.define("tg-epgcard", tgEpgCard);
-window.customCards = window.customCards || [];
-window.customCards.push({
-    type: "tg-epgcard",
-    name: "epg card",
-    description: "epg card"
-});
 
-},{"./lib/tgControls.js":"5PP50","./defaults_Card.js":"1MdrO","./tgepg-dataWorker.js":"jckaK","./lib/epgElements/tgEpg.timebar.js":"j75MS","./lib/epgElements/tgEpg.channelList.js":"hFcgl","./lib/epgElements/tgEpg.channelListItem.js":"aLlUv","./lib/epgElements/tgEpg.progList.js":"aIXjC","./lib/epgElements/tgEpg.progItem.js":"4puUn","./lib/tgControls.Scrollbar.js":"cWkM0"}],"5PP50":[function(require,module,exports) {
+},{"./lib/tgControls.js":"5PP50","./defaults_Card.js":"1MdrO","./tgepg-dataWorker.js":"jckaK","./lib/epgElements/tgEpg.timebar.js":"j75MS","./lib/epgElements/tgEpg.channelList.js":"hFcgl","./lib/epgElements/tgEpg.channelListItem.js":"aLlUv","./lib/epgElements/tgEpg.progList.js":"aIXjC","./lib/epgElements/tgEpg.progItem.js":"4puUn","./lib/tgControls.Scrollbar.js":"cWkM0","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"5PP50":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "tgControls", ()=>tgControls);

@@ -11,7 +11,7 @@ import './lib/epgElements/tgEpg.progItem.js';
 //import './lib/tgControls.FloatingMenu.js';
 import './lib/tgControls.Scrollbar.js';
 
-class tgEpgCard extends tgControls
+export class tgEpgCard extends tgControls
 	{
 	// private properties
 	_config;
@@ -782,10 +782,3 @@ static getStubConfig() {
 	return { entity: "input_boolean.tcwsd" }
 }
 	}
-customElements.define('tg-epgcard', tgEpgCard);
-window.customCards = window.customCards || [];
-window.customCards.push({
-type: "tg-epgcard",
-name: "epg card",
-description: "epg card"
-});
