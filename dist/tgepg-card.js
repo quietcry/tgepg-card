@@ -706,7 +706,7 @@ class tgEpgCard extends (0, _tgControlsJs.tgControls) {
     }
     setCurrentProfile(run) {
         var that = this;
-        let userprofile = run.profiles?.users[run.username] || {};
+        let userprofile = run.username && run.profiles?.users ? run.profiles.users[run.username] || {} : {};
         let profile = this._extender({}, run.profiles, userprofile);
         delete profile.users;
         let options = profile.options || {};
