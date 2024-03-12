@@ -18,6 +18,7 @@ export class tgEpgProgListDefaults extends tgEpgDefaultsCommon
 		var styles=super.styles||"";
 			styles=styles+`
 			<style>
+			
 			:host
 				{
 				display:inline-block;
@@ -46,7 +47,9 @@ export class tgEpgProgListDefaults extends tgEpgDefaultsCommon
 				}
 			.TabCell > .Tab
 				{
-				height:100%;
+				height:100% !important;
+				max-height:100% !important;
+				min-height:100% !important;
 				}
 			.TabRow
 				{
