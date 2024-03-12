@@ -584,6 +584,16 @@ function hmrAccept(bundle /*: ParcelRequire */ , id /*: string */ ) {
 }
 
 },{}],"ciLff":[function(require,module,exports) {
+var _tgepgCardClass = require("./tgepg-card-class");
+customElements.define("tgepg-card", (0, _tgepgCardClass.tgEpgCard));
+window.customCards = window.customCards || [];
+window.customCards.push({
+    type: "tgepg-card",
+    name: "epg card",
+    description: "epg card"
+});
+
+},{"./tgepg-card-class":"873X9"}],"873X9":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "tgEpgCard", ()=>tgEpgCard);
