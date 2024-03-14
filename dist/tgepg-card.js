@@ -639,8 +639,10 @@ class tgEpgCard extends (0, _tgControlsJs.tgControls) {
         var that = this;
         if (this._enable_DataWorker) {
             function startworker() {
-                var workerstringified = (0, _tgControlsHelperBasicJs.tgControlsHelperBasic).toString() + " " + (0, _tgepgDataWorkerJs.tgEpgDataService).toString();
-                workerstringified = workerstringified + " " + workerRunner.toString().replace(/^function .+[\n\s\t]*\{/g, "").replace(/\}$/g, "");
+                var workerstringified = (0, _tgControlsHelperBasicJs.tgControlsHelperBasic).toString();
+                console.log(workerstringified);
+                workerstringified = workerstringified + "; " + (0, _tgepgDataWorkerJs.tgEpgDataService).toString();
+                workerstringified = workerstringified + "; " + workerRunner.toString().replace(/^function .+[\n\s\t]*\{/g, "").replace(/\}$/g, "");
                 var workerBlob = new Blob([
                     workerstringified
                 ], {

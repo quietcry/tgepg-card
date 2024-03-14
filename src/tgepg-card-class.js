@@ -44,8 +44,10 @@ export class tgEpgCard extends tgControls
 			{
 			function startworker () 
 				{
-				var workerstringified=tgControlsHelperBasic.toString()+" "+ tgEpgDataService.toString()
-				workerstringified=workerstringified+" "+workerRunner.toString().replace(/^function .+[\n\s\t]*\{/g, '').replace(/\}$/g, '')  
+				var workerstringified=tgControlsHelperBasic.toString()
+				console.log(workerstringified)
+				workerstringified=workerstringified+"; "+ tgEpgDataService.toString()
+				workerstringified=workerstringified+"; "+workerRunner.toString().replace(/^function .+[\n\s\t]*\{/g, '').replace(/\}$/g, '')  
 
 				var workerBlob = new Blob( [workerstringified], { type:'text/javascript' } );
 				var workerBlobUrl = URL.createObjectURL(workerBlob);
