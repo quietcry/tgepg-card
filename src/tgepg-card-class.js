@@ -44,8 +44,7 @@ export class tgEpgCard extends tgControls
 			{
 			function startworker () 
 				{
-				var workerstringified=tgControlsHelperBasic.toString()
-				console.log(workerstringified)
+				var workerstringified=""
 				workerstringified=workerstringified+"; "+ tgEpgDataService.toString()
 				workerstringified=workerstringified+"; "+workerRunner.toString().replace(/^function .+[\n\s\t]*\{/g, '').replace(/\}$/g, '')  
 

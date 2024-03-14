@@ -1,5 +1,5 @@
 
-import { tgControlsHelperBasic } from "./lib/tgControls.helper_basic.js";
+//import { tgControlsHelperBasic } from "./lib/tgControls.helper_basic.js";
 // Struktur:
 	// 			this.channels=	{
 	// 							todolist:	{
@@ -29,11 +29,28 @@ import { tgControlsHelperBasic } from "./lib/tgControls.helper_basic.js";
 	//										}
 	//							}
 
-export class tgEpgDataService extends tgControlsHelperBasic
+export class tgEpgDataService
     {
     constructor(me=null)
         {
-        super();
+        //super();
+		this.YES			= [true, "true", 1, "1"];
+		this.NO				= [false, "false", 0, "0", null];
+		this.PROPS=this._extender(
+			{
+			run:{
+				msg:
+					{
+					error:true,
+					warn:true,
+					info:true,
+					debug:true,
+					log:true
+					}
+				}
+			})
+		
+
         this.basicConfig =
             {
 			pastTimeSec: (1*60*60),
@@ -464,4 +481,194 @@ export class tgEpgDataService extends tgControlsHelperBasic
 			return result	
 			}	
         }
+	//######################################################################################################################################
+	//
+	//
+	//
+	//######################################################################################################################################
+	_message()
+		{
+		var args = Array.from(arguments);
+		var type=args.shift().toLowerCase()
+		if (! ["debug","info","warn","log","error"].includes(type)) return;
+		if (typeof this.hasAttribute === 'function')
+			{
+			args.unshift(this.nodeName+((this.hasAttribute("id"))?"("+this.getAttribute("id")+")":"")+":");
+			}
+		if (this.PROPS.run.msg[type.toLowerCase()] !== false) console[type.toLowerCase()].apply(this,args);
+		}
+	//######################################################################################################################################
+	_debug()
+		{
+		var args = Array.from(arguments); args.unshift("debug"); this._message.apply(this, args)
+		}
+	//######################################################################################################################################
+	_info()
+		{
+		var args = Array.from(arguments); args.unshift("info"); this._message.apply(this, args)
+		}
+	//######################################################################################################################################
+	_log()
+		{
+		var args = Array.from(arguments); args.unshift("log"); this._message.apply(this, args)
+		}
+	//######################################################################################################################################
+	_warn()
+		{
+		var args = Array.from(arguments); args.unshift("warn"); this._message.apply(this, args)
+		}
+	//######################################################################################################################################
+	_error()
+		{
+		var args = Array.from(arguments); args.unshift("error"); this._message.apply(this, args)
+		}
+	//######################################################################################################################################
+	//
+	//
+	//
+	//######################################################################################################################################
+	_extender () //clone an Object
+		{
+		for(var i=1; i<arguments.length; i++)
+			{
+			for(var key in arguments[i])
+				{
+				var isitArray=false;
+				arguments[0][key]=arguments[0][key]||{};
+				if (typeof arguments[i][key] === "function")
+					{
+					arguments[0][key] = arguments[i][key];
+					}
+				else if ( isObject(arguments[i][key]) )
+					{
+					arguments[0][key]=(Array.isArray(arguments[i][key]))? arguments[i][key]:this._extender(arguments[0][key],arguments[i][key]);
+					}
+				else if (Object.prototype.hasOwnProperty.call(arguments[i], key))
+					{
+					arguments[0][key] = arguments[i][key];
+					}
+				}
+			}
+		return arguments[0];
+		function isObject(obj)
+			{
+			return obj === Object(obj);
+		  	}
+		};
+	//######################################################################################################################################
+	//
+	//
+	//
+	//######################################################################################################################################
+	_getType(obj, types=null)
+		{
+		let reg=/\s*([|,;\s])\s*/g;
+		types= (!types)?null:( (Array.isArray(types))?types: ((!(typeof(types) == "string"))?null:(types == "")?null:types.split(reg)) );
+
+		var t=typeof(obj);
+		if (t=="string")
+			{
+			try
+				{
+				t="jsonstring"
+				JSON.parse(obj);
+				}
+			catch (e)
+				{
+				t="string"
+				}
+			}
+		else if (t=="object")
+			{
+			if (Array.isArray(obj))
+				{
+				t="array";
+				}
+			else if (obj===null)
+				{
+				t="null";
+				}
+			else if (obj.nodeType !== undefined)
+				{
+				switch	(obj.nodeType)
+					{
+					case 1:
+						t="nodeElement";
+						break;
+					case 3:
+						t="nodeText";
+						break;
+					default:
+						t="node";
+					}
+				}
+			else if (obj instanceof FormData)
+				{
+				t="formdata"
+				}
+			else if ( (Object.getPrototypeOf(obj)) && (obj.length))
+				{
+				let x=Object.getPrototypeOf(obj);
+				x=x.toString();
+				let y=x.match(/\s(.+?)\]$/);
+				if (y) t="array"+y[1];
+				}
+			else if (Object.hasOwn(obj,"thisIsClass"))
+				{
+				t="class";
+				}	
+			else
+				{
+				t="hash";
+				}
+			}
+		if ( (types) && (Array.isArray(types)) )
+			{
+			let q = types.includes(t);
+			types.forEach(type =>
+				{
+				if (q === true) return;
+				if ( (type.endsWith(".")) && (type.substr(-1)==t) ) q=true;
+				});
+			return (q|t);
+			}
+		return t;
+		}
+	//######################################################################################################################################
+	//
+	//
+	//
+	//######################################################################################################################################
+	_JSONcorrector(val="[]", splitter=null)
+		{
+		let org=val;
+		if (this._getType(val, "string,jsonstring"))
+			{
+			try
+				{
+				val=JSON.parse(val);
+				}
+			catch
+				{
+				if (org == "")
+					{
+					console.debug('%cJSONcorrector: your JSON-Code was empty ', 'background: #222; color: #bada55');
+					}
+				else
+					{
+					console.debug('%cToolBar: there was an Error in your JSON Code ', 'background: #222; color: #bada55');
+					console.debug('JSON-code: %c'+org, 'background: #222; color: #bada55');
+					}
+				if (splitter)
+					{
+					val=val.split(splitter);
+					}
+				}
+			}
+		return ( (this._getType(val,"array hash"))?val:[val] );
+		}
+
+
+
+
     }
