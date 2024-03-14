@@ -2,6 +2,7 @@
 import { tgControls } from "./lib/tgControls.js";
 import { tgEpgCardDefaults } from "./defaults_Card.js"
 import { tgEpgDataService } from "./tgepg-dataWorker.js"
+import { tgControlsHelperBasic } from "./lib/tgControls.helper_basic.js";
 
 import './lib/epgElements/tgEpg.timebar.js';
 import './lib/epgElements/tgEpg.channelList.js';
@@ -28,6 +29,7 @@ export class tgEpgCard extends tgControls
 	_enable_TimeBar=false
 	_enable_Scrollbar=true
 	_enable_DataWorker=true
+	_enable_DataService=false
 	_enable_channelList=true
 	_enable_progList=true
 	_dataLoopsAllowed=-1
@@ -38,8 +40,32 @@ export class tgEpgCard extends tgControls
 		var now= new Date()
 		this._info("under construction ;-)", now)
 		var that=this
-		//this.card =
 		if (this._enable_DataWorker)
+			{
+			function startworker () 
+				{
+				var workerstringified=tgControlsHelperBasic.toString()+" "+ tgEpgDataService.toString()
+				workerstringified=workerstringified+" "+workerRunner.toString().replace(/^function .+[\n\s\t]*\{/g, '').replace(/\}$/g, '')  
+
+				var workerBlob = new Blob( [workerstringified], { type:'text/javascript' } );
+				var workerBlobUrl = URL.createObjectURL(workerBlob);
+				that.dataWorker = new Worker(workerBlobUrl);
+				that.dataWorker.onmessage = function(event) 
+					{
+					that.renderChannels(event.data)
+					};
+				function workerRunner()
+					{
+					const workerclass= new tgEpgDataService(this) 	
+					self.onmessage = function(event) 
+						{
+						workerclass.addRequest(event.data)
+						}
+					};
+				};	
+			startworker()
+			}			
+		else if (this._enable_DataService)
 			{
 			this.dataWorker = new tgEpgDataService (this)
 			var runloop=0
@@ -58,15 +84,30 @@ export class tgEpgCard extends tgControls
 		this.addEventListener("resize", refreshMe)
 		this.addEventListener("refresh", refreshMe)
 		this.addEventListener("rotate", refreshMe)
+		this.dependedApps=[]
+		this.doQueryElements()
+
 		function refreshMe(event)
 			{
 			that.refresh(event.type)	
 			}
+	
+		// if (this.workerSource)
+		// 	{
+		// 	let workerBlob = new Blob([this.workerSource.text], { type: "application/javascript" });
+		// 	let workerUrl = URL.createObjectURL(workerBlob);
+		// 	let worker = new Worker(workerUrl);
+		// 	URL.revokeObjectURL(workerUrl)
+		// 	console.log("wörker", worker)
+		 
+		// 		worker.addEventListener("message", function(messageEvent) {
+		// 				   console.warn("Der Wörker sagt: " + messageEvent.data);
+		// 				});	
+		
+		// 	}	
 		
 		//["connected"].forEach(evname => my.addEventListener( evname, function(event){alert("event")}))
 
-		this.dependedApps=[]
-		this.doQueryElements()
 
 		// this.dataWorker = new Worker("tgepg-dataWorker.js", {type: 'module'});
 		// this.dataWorker.addEventListener("message", function(messageEvent)
@@ -326,6 +367,7 @@ export class tgEpgCard extends tgControls
 
 	doQueryElements()
 		{
+	
 		this.card			= this._shadowRoot.querySelector("ha-card") || this._shadowRoot
 		this.app 			= this.card.querySelector('[name="app"]');
 		if (this.app)
@@ -338,6 +380,7 @@ export class tgEpgCard extends tgControls
 			this.scrollbarX		= this._shadowRoot.querySelector('.tgcontrolscrollbarx');;
 			this.scrollbarY 	= null;
 			this.floatingMenu 	= this._shadowRoot.querySelector('tg-floatingMenu');
+			this.workerSource 	= this._shadowRoot.querySelector('[name="worker"]');
 
 			}
 		//console.debug("query", this.channelBox || "none")
@@ -674,9 +717,17 @@ export class tgEpgCard extends tgControls
 		this.sendDataToWorker()	
 		this._debug("doUpdateHass profile", this.PROPS.run.currentProfile)	
 		}
+
+	//######################################################################################################################################
+	//sendDataToWorker()
+	//
+	//
+	//######################################################################################################################################
+
+
 	sendDataToWorker(now=new Date())
 		{
-		if ( !this._enable_DataWorker || !this.dataWorker)	return;
+		if ( !this.dataWorker || ( !this._enable_DataWorker && !this._enable_DataService))	return;
 		let interval=100
 		let maxTimespan=60*1000
 		let _now=new Date()
@@ -701,7 +752,15 @@ export class tgEpgCard extends tgControls
 			configs=this._extender(configs,{source:ent, state:this.getState(ent)})
 			let workerdata=this._extender(this._entities[ent].attributes, {config:configs})
 			this._info("sendDataToWorker doUpdateHass run update", ent, `${Object.keys(workerdata).length-1} channels`, workerdata)	
-			this.dataWorker.addRequest(workerdata)
+			if (this._enable_DataWorker)
+				{
+				console.debug(this.dataWorker)	
+				this.dataWorker.postMessage(workerdata)
+				}
+			else if (this._enable_DataService)
+				{
+				this.dataWorker.addRequest(workerdata)
+				}
 			}
 	
 

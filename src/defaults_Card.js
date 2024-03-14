@@ -232,6 +232,7 @@ export class tgEpgCardDefaults extends tgEpgDefaultsCommon
 					</div>
 				</div>
 			</div>
+
 			<!-- App Ende-->
 			<tg-epg-options name="optionBox" class="optionBox hide" ></tg-epg-options>
 			<tg-floatingMenu pos="brv" folded="folded"  class="hide">

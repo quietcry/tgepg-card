@@ -70,12 +70,28 @@ export class tgEpgDataService extends tgControlsHelperBasic
 
 		//console.debug(this.me)
         }
+	sendDataBack(data)
+		{
+		if (this.me instanceof DedicatedWorkerGlobalScope)
+			{
+			this.me.postMessage(data) 
+			}
+		else
+			{
+			var ev = new CustomEvent('fetchWorkerData', {detail:data});
+			this.me.dispatchEvent(ev);	
+			}
 
+
+		}
 	addRequest(data)
         {
-		this._warn("data: received",this._getType(data))
+		if (!this._getType(data, "hash"))
+			{
+			this._warn("data: received",this._getType(data), data)
+			return null	
+			}	
 	
-        if (!this._getType(data, "hash")) return null;
 		//alert("get request")
         var that = this;
         //###############################
@@ -371,17 +387,12 @@ export class tgEpgDataService extends tgControlsHelperBasic
 						_addTodolist(channel, "add3", item.key )
 						}	
                     }
-
 				if (that.me)
 					{
 					let result={todolist: {}, data:{}}
 					result.data[channel.id]=that._extender({}, channel)
 					delete result.data[channel.id].epg	
-
-					//that._debug("send WorkerData", result)	
-					var ev = new CustomEvent('fetchWorkerData', {detail:result});
-					that.me.dispatchEvent(ev);
-
+					that.sendDataBack(result)	
 					}
 				}
 
@@ -444,9 +455,8 @@ export class tgEpgDataService extends tgControlsHelperBasic
 		_addTodolist(result, "manage", {now:now,min:min,max:max})	
 		if (that.me)
 			{
-			that._debug("dataworker send WorkerData", result)	
-			var ev = new CustomEvent('fetchWorkerData', {detail:result});
-			that.me.dispatchEvent(ev);
+			that._debug("dataworker send WorkerData", result)
+			that.sendDataBack(result)	
 			}
 		else
 			{
@@ -455,4 +465,3 @@ export class tgEpgDataService extends tgControlsHelperBasic
 			}	
         }
     }
-

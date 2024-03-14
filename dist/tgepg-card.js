@@ -584,22 +584,23 @@ function hmrAccept(bundle /*: ParcelRequire */ , id /*: string */ ) {
 }
 
 },{}],"ciLff":[function(require,module,exports) {
-var _tgepgCardClass = require("./tgepg-card-class");
-customElements.define("tgepg-card", (0, _tgepgCardClass.tgEpgCard));
+var _tgepgCardClassJs = require("./tgepg-card-class.js");
+customElements.define("tgepg-card", (0, _tgepgCardClassJs.tgEpgCard));
 window.customCards = window.customCards || [];
 window.customCards.push({
     type: "tgepg-card",
-    name: "epg card",
+    name: "tgepg-card",
     description: "epg card"
 });
 
-},{"./tgepg-card-class":"873X9"}],"873X9":[function(require,module,exports) {
+},{"./tgepg-card-class.js":"873X9"}],"873X9":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "tgEpgCard", ()=>tgEpgCard);
 var _tgControlsJs = require("./lib/tgControls.js");
 var _defaultsCardJs = require("./defaults_Card.js");
 var _tgepgDataWorkerJs = require("./tgepg-dataWorker.js");
+var _tgControlsHelperBasicJs = require("./lib/tgControls.helper_basic.js");
 var _tgEpgTimebarJs = require("./lib/epgElements/tgEpg.timebar.js");
 var _tgEpgChannelListJs = require("./lib/epgElements/tgEpg.channelList.js");
 var _tgEpgChannelListItemJs = require("./lib/epgElements/tgEpg.channelListItem.js");
@@ -626,6 +627,7 @@ class tgEpgCard extends (0, _tgControlsJs.tgControls) {
     _enable_TimeBar = false;
     _enable_Scrollbar = true;
     _enable_DataWorker = true;
+    _enable_DataService = false;
     _enable_channelList = true;
     _enable_progList = true;
     _dataLoopsAllowed = -1;
@@ -635,8 +637,29 @@ class tgEpgCard extends (0, _tgControlsJs.tgControls) {
         var now = new Date();
         this._info("under construction ;-)", now);
         var that = this;
-        //this.card =
         if (this._enable_DataWorker) {
+            function startworker() {
+                var workerstringified = (0, _tgControlsHelperBasicJs.tgControlsHelperBasic).toString() + " " + (0, _tgepgDataWorkerJs.tgEpgDataService).toString();
+                workerstringified = workerstringified + " " + workerRunner.toString().replace(/^function .+[\n\s\t]*\{/g, "").replace(/\}$/g, "");
+                var workerBlob = new Blob([
+                    workerstringified
+                ], {
+                    type: "text/javascript"
+                });
+                var workerBlobUrl = URL.createObjectURL(workerBlob);
+                that.dataWorker = new Worker(workerBlobUrl);
+                that.dataWorker.onmessage = function(event) {
+                    that.renderChannels(event.data);
+                };
+                function workerRunner() {
+                    const workerclass = new (0, _tgepgDataWorkerJs.tgEpgDataService)(this);
+                    self.onmessage = function(event) {
+                        workerclass.addRequest(event.data);
+                    };
+                }
+            }
+            startworker();
+        } else if (this._enable_DataService) {
             this.dataWorker = new (0, _tgepgDataWorkerJs.tgEpgDataService)(this);
             var runloop = 0;
             this.addEventListener("fetchWorkerData", function(event) {
@@ -653,12 +676,23 @@ class tgEpgCard extends (0, _tgControlsJs.tgControls) {
         this.addEventListener("resize", refreshMe);
         this.addEventListener("refresh", refreshMe);
         this.addEventListener("rotate", refreshMe);
+        this.dependedApps = [];
+        this.doQueryElements();
         function refreshMe(event) {
             that.refresh(event.type);
         }
+        // if (this.workerSource)
+        // 	{
+        // 	let workerBlob = new Blob([this.workerSource.text], { type: "application/javascript" });
+        // 	let workerUrl = URL.createObjectURL(workerBlob);
+        // 	let worker = new Worker(workerUrl);
+        // 	URL.revokeObjectURL(workerUrl)
+        // 	console.log("wörker", worker)
+        // 		worker.addEventListener("message", function(messageEvent) {
+        // 				   console.warn("Der Wörker sagt: " + messageEvent.data);
+        // 				});	
+        // 	}	
         //["connected"].forEach(evname => my.addEventListener( evname, function(event){alert("event")}))
-        this.dependedApps = [];
-        this.doQueryElements();
         // this.dataWorker = new Worker("tgepg-dataWorker.js", {type: 'module'});
         // this.dataWorker.addEventListener("message", function(messageEvent)
         // 	{
@@ -847,6 +881,7 @@ class tgEpgCard extends (0, _tgControlsJs.tgControls) {
             this.scrollbarX = this._shadowRoot.querySelector(".tgcontrolscrollbarx");
             this.scrollbarY = null;
             this.floatingMenu = this._shadowRoot.querySelector("tg-floatingMenu");
+            this.workerSource = this._shadowRoot.querySelector('[name="worker"]');
         }
     //console.debug("query", this.channelBox || "none")
     // this.buttonCell = this.shadowRoot.querySelector('[name="buttonCell"]');
@@ -1096,8 +1131,13 @@ class tgEpgCard extends (0, _tgControlsJs.tgControls) {
         this.sendDataToWorker();
         this._debug("doUpdateHass profile", this.PROPS.run.currentProfile);
     }
+    //######################################################################################################################################
+    //sendDataToWorker()
+    //
+    //
+    //######################################################################################################################################
     sendDataToWorker(now = new Date()) {
-        if (!this._enable_DataWorker || !this.dataWorker) return;
+        if (!this.dataWorker || !this._enable_DataWorker && !this._enable_DataService) return;
         let interval = 100;
         let maxTimespan = 60000;
         let _now = new Date();
@@ -1129,7 +1169,10 @@ class tgEpgCard extends (0, _tgControlsJs.tgControls) {
                 config: configs
             });
             this._info("sendDataToWorker doUpdateHass run update", ent1, `${Object.keys(workerdata).length - 1} channels`, workerdata);
-            this.dataWorker.addRequest(workerdata);
+            if (this._enable_DataWorker) {
+                console.debug(this.dataWorker);
+                this.dataWorker.postMessage(workerdata);
+            } else if (this._enable_DataService) this.dataWorker.addRequest(workerdata);
         }
     }
     setProfile() {
@@ -1189,7 +1232,7 @@ class tgEpgCard extends (0, _tgControlsJs.tgControls) {
     }
 }
 
-},{"./lib/tgControls.js":"5PP50","./defaults_Card.js":"1MdrO","./tgepg-dataWorker.js":"jckaK","./lib/epgElements/tgEpg.timebar.js":"j75MS","./lib/epgElements/tgEpg.channelList.js":"hFcgl","./lib/epgElements/tgEpg.channelListItem.js":"aLlUv","./lib/epgElements/tgEpg.progList.js":"aIXjC","./lib/epgElements/tgEpg.progItem.js":"4puUn","./lib/tgControls.Scrollbar.js":"cWkM0","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"5PP50":[function(require,module,exports) {
+},{"./lib/tgControls.js":"5PP50","./defaults_Card.js":"1MdrO","./tgepg-dataWorker.js":"jckaK","./lib/tgControls.helper_basic.js":"dF8RS","./lib/epgElements/tgEpg.timebar.js":"j75MS","./lib/epgElements/tgEpg.channelList.js":"hFcgl","./lib/epgElements/tgEpg.channelListItem.js":"aLlUv","./lib/epgElements/tgEpg.progList.js":"aIXjC","./lib/epgElements/tgEpg.progItem.js":"4puUn","./lib/tgControls.Scrollbar.js":"cWkM0","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"5PP50":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "tgControls", ()=>tgControls);
@@ -2099,6 +2142,7 @@ class tgEpgCardDefaults extends (0, _defaultsCommonJs.tgEpgDefaultsCommon) {
 					</div>
 				</div>
 			</div>
+
 			<!-- App Ende-->
 			<tg-epg-options name="optionBox" class="optionBox hide" ></tg-epg-options>
 			<tg-floatingMenu pos="brv" folded="folded"  class="hide">
@@ -2288,9 +2332,20 @@ class tgEpgDataService extends (0, _tgControlsHelperBasicJs.tgControlsHelperBasi
         this.channels = this._extender({}, this.channelsTmpl);
     //console.debug(this.me)
     }
+    sendDataBack(data) {
+        if (this.me instanceof DedicatedWorkerGlobalScope) this.me.postMessage(data);
+        else {
+            var ev = new CustomEvent("fetchWorkerData", {
+                detail: data
+            });
+            this.me.dispatchEvent(ev);
+        }
+    }
     addRequest(data) {
-        this._warn("data: received", this._getType(data));
-        if (!this._getType(data, "hash")) return null;
+        if (!this._getType(data, "hash")) {
+            this._warn("data: received", this._getType(data), data);
+            return null;
+        }
         //alert("get request")
         var that = this;
         //###############################
@@ -2519,11 +2574,7 @@ class tgEpgDataService extends (0, _tgControlsHelperBasicJs.tgControlsHelperBasi
                     };
                     result.data[channel.id] = that._extender({}, channel);
                     delete result.data[channel.id].epg;
-                    //that._debug("send WorkerData", result)	
-                    var ev = new CustomEvent("fetchWorkerData", {
-                        detail: result
-                    });
-                    that.me.dispatchEvent(ev);
+                    that.sendDataBack(result);
                 }
             }
         });
@@ -2580,10 +2631,7 @@ class tgEpgDataService extends (0, _tgControlsHelperBasicJs.tgControlsHelperBasi
         });
         if (that.me) {
             that._debug("dataworker send WorkerData", result);
-            var ev = new CustomEvent("fetchWorkerData", {
-                detail: result
-            });
-            that.me.dispatchEvent(ev);
+            that.sendDataBack(result);
         } else //that._debug("send WorkerData manager", result)		
         return result;
     }
@@ -4398,6 +4446,7 @@ class tgEpgProgListDefaults extends (0, _defaultsCommonJs.tgEpgDefaultsCommon) {
         var styles = super.styles || "";
         styles = styles + `
 			<style>
+			
 			:host
 				{
 				display:inline-block;
@@ -4426,7 +4475,9 @@ class tgEpgProgListDefaults extends (0, _defaultsCommonJs.tgEpgDefaultsCommon) {
 				}
 			.TabCell > .Tab
 				{
-				height:100%;
+				height:100% !important;
+				max-height:100% !important;
+				min-height:100% !important;
 				}
 			.TabRow
 				{
