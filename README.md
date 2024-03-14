@@ -1,13 +1,13 @@
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg?style=for-the-badge)](https://github.com/hacs/integration)
 # EPG-Card for Home Assistant as frontend for Klaus Schmidingers VDR
-works together with tgvdr-integration https://github.com/quietcry/tgvdr.git
+works together with [tgvdr-integration](https://github.com/quietcry/tgvdr.git)
 ***
 
 
 * @published: March 2024
 * @author: Thomas Geißenhöner
 * @workspace: `conf/www/tgepg-card`
-* thanks to Elmar Hinz for card development tutorial https://github.com/home-assistant-tutorials
+* thanks to Elmar Hinz for [card development tutorial](https://github.com/home-assistant-tutorials)
 
   
 this is a very early version! Please be beware.
