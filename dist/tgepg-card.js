@@ -641,7 +641,11 @@ class tgEpgCard extends (0, _tgControlsJs.tgControls) {
             function startworker() {
                 var workerstringified = "";
                 workerstringified = workerstringified + "; " + (0, _tgepgDataWorkerJs.tgEpgDataService).toString();
-                workerstringified = workerstringified + "; " + workerRunner.toString().replace(/^function .+[\n\s\t]*\{/g, "").replace(/\}$/g, "");
+                //workerstringified=workerstringified+"; "+workerRunner.toString().replace(/^function .+[\n\s\t]*\{/g, '').replace(/\}$/g, '') 
+                workerstringified = workerstringified + "; " + workerRunnerAsString();
+                //var test=new  tgEpgDataService()
+                //console.log("worker", Object.getPrototypeOf(test).constructor.name)
+                //console.log("worker", workerstringified)
                 var workerBlob = new Blob([
                     workerstringified
                 ], {
@@ -652,11 +656,15 @@ class tgEpgCard extends (0, _tgControlsJs.tgControls) {
                 that.dataWorker.onmessage = function(event) {
                     that.renderChannels(event.data);
                 };
-                function workerRunner() {
-                    const workerclass = new (0, _tgepgDataWorkerJs.tgEpgDataService)(this);
-                    self.onmessage = function(event) {
-                        workerclass.addRequest(event.data);
-                    };
+                function workerRunnerAsString() {
+                    var workerrunner = `	
+					const workerclass= new tgEpgDataService(this) 	
+					self.onmessage = function(event) 
+						{
+						workerclass.addRequest(event.data)
+						}
+					`;
+                    return workerrunner;
                 }
             }
             startworker();

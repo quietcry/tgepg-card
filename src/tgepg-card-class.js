@@ -46,7 +46,11 @@ export class tgEpgCard extends tgControls
 				{
 				var workerstringified=""
 				workerstringified=workerstringified+"; "+ tgEpgDataService.toString()
-				workerstringified=workerstringified+"; "+workerRunner.toString().replace(/^function .+[\n\s\t]*\{/g, '').replace(/\}$/g, '')  
+				//workerstringified=workerstringified+"; "+workerRunner.toString().replace(/^function .+[\n\s\t]*\{/g, '').replace(/\}$/g, '') 
+				workerstringified=workerstringified+"; "+workerRunnerAsString() 
+				//var test=new  tgEpgDataService()
+				//console.log("worker", Object.getPrototypeOf(test).constructor.name)
+				//console.log("worker", workerstringified)
 
 				var workerBlob = new Blob( [workerstringified], { type:'text/javascript' } );
 				var workerBlobUrl = URL.createObjectURL(workerBlob);
@@ -55,13 +59,16 @@ export class tgEpgCard extends tgControls
 					{
 					that.renderChannels(event.data)
 					};
-				function workerRunner()
+				function workerRunnerAsString()
 					{
+					var workerrunner=`	
 					const workerclass= new tgEpgDataService(this) 	
 					self.onmessage = function(event) 
 						{
 						workerclass.addRequest(event.data)
 						}
+					`
+					return workerrunner	
 					};
 				};	
 			startworker()
