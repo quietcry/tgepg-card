@@ -2,6 +2,8 @@ import { tgEpgDefaultsCommon }  from "./defaults_Common.js"
 
 export class tgEpgChannelListDefaults extends tgEpgDefaultsCommon
 	{
+	thisIsClass=true	
+	
 	constructor()
 		{
 		super("open");
@@ -12,21 +14,20 @@ export class tgEpgChannelListDefaults extends tgEpgDefaultsCommon
 
 									}),
 						}
+		console.log("tgEpgChannelListDefaults", "constructed")				
 		}
 	
-	static get properties()
+	get properties()
 		{
-		var props=super.properties||{};
-		props["dataref"]=null;
-		props["timerowheight"]="50";
-		props["channelrowheight"]="50";
-		props["channelcolumnwidth"]="150";
-
+		var props=super.properties||{_common:false};
+		props["_default"]=true;
 		return props;
 		}
 
 	static get template()
 		{
+		console.log("tgEpgChannelListDefaults", "template")				
+	
 		var styles=super.styles||"";
 		styles=styles+  `
 						<style>

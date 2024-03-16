@@ -11,117 +11,58 @@ import { tgControls } from "../tgControls.js";
 import { tgEpgTimebarDefaults } from "../../defaults_Timebar.js";
 
 export class tgEpgTimebar extends tgControls
-	{
-	constructor(properties)
+	{			
+	constructor(mode="open", props={})
 		{
-		super("open");
+		super(mode, new tgEpgTimebarDefaults());
 		var that=this;
 		// default Parameter nach Props einlesen
-		this.tgEpgDefaults=new tgEpgTimebarDefaults(this);
-		this["PROPS"]=this._extender( (this["PROPS"] || {}),
-						{
-						// defaults:this.tgEpgDefaults.loadDefaults(),
-						// run:this.tgEpgDefaults.loadRun(),
-						// set:this.tgEpgDefaults.loadSet()
-						});
-		// Props durch hartcodierte Werte erweitern/anpassen
-		this["PROPS"]=this._extender( (this["PROPS"] || {}),
-						{
-						run:	{
-								msg:	{
-										log:true,
-										debug:true,
-										error:true
+		this["PROPS"]=this._extender( 
+							{},
+							this["PROPS"]||{},
+							{
+							default:	{
+										msg:	{
+												log:true,
+												debug:true,
+												error:true
+												},
+										skale:0,
+										firstStart:0,
+										lastEnd:0,
+										timePosition:0,
+										epgEnd:100
 										},
-								skale:0,
-								firstStart:0,
-								lastEnd:0,
-								timePosition:0,
-								epgEnd:100
-								},
-						default:{connected:0},
-						paras:this._extender({},tgEpgTimebar.properties)
-						});
-		// Props durch im Storage gespeichertes erweitern/anpassen
-		//this.PROPS.set = this._extender({}, (this.PROPS.defaults || {}), (this.PROPS.set || {}), (this._readOptions(this.PROPS.defaults._storageKey) || {}));
-
-		this._debug("constructor - Parameters", "props:",this["PROPS"]);
-
-		// data handler init
-		this.epgData={};
-
-
-
-
-		//this.me=new tgEpgHelper(false);
+							attr:		this._extender({},tgEpgTimebar.properties)
+							});
 
 		this.app = this.shadowRoot.querySelector('[name="app"]');
-		// this.buttonCell = this.shadowRoot.querySelector('[name="buttonCell"]');
-
-		// this.channelBox = this.shadowRoot.querySelector('[name="channelBox"]');
-		// this.programBox = this.shadowRoot.querySelector('[name="programBox"]');
-		// this.timeBar = this.shadowRoot.querySelector('[name="timeBar"]');
-		// this.timeRow = this.shadowRoot.querySelector('[name="timeRow"]');
-		// this.timeMarker = that.shadowRoot.querySelector('[name="timemarker"]');
-		// this.superButton = that.shadowRoot.querySelector('#superbutton');
-		// this.floatingMenu = that.shadowRoot.querySelector('[name="app"]>tg-floatingMenu');
-
-
-
-
-/*
-		let body=document.querySelector("body");
-													`<div name="EpgInfoBox" class="hide"></div>`
-		this.EpgInfoBox = this.shadowRoot.querySelector('[name="EpgInfoBox"]');
-
- */
-
-
-		// this._writeOptions(this.PROPS.defaults._storageKey, this.PROPS.set);
-		//this._debug("JSON", this.readOptions(this.PROPS.defaults._storageKey))
-		//this.PROPS.run.topElements = [this.app, this.icon];
-
-		//this._log("construction ended", "props:",this.PROPS, "me:", this);
 		this._debug("constructor - constructed");
 
 		}
-
-
 	//######################################################################################################################################
 	//
 	//
-	//
-	//######################################################################################################################################
-	template()
-		{
-		let tmp = tgEpgTimebarDefaults.template;
-		return tmp;
-		}
-	//######################################################################################################################################
-	//
-	// properties()
-	// collect name-value pairs to use as observed Atrributes and the corresponding this->PROPS->paras
 	//
 	//######################################################################################################################################
 	static get properties()
 		{
-		let props=	tgEpgTimebarDefaults.properties || {};
+		let props= 	{
+					timelinestart:null,
+					timelineend:null,
+					enableTimemarker:false
+					};
 		let superProps=super.properties||{};
 		props=Object.assign(superProps,props);
 		return props;
 		}
 	//######################################################################################################################################
-	//
-	//
-	//
-	//######################################################################################################################################
-	static get observedAttributes()
-	 	{
-		let props=tgEpgTimebar.properties;
-		props=Object.keys(props);
-		console.debug("observedAttributes::", "prop:",props);
-		return  props;
-  	 	}
+	static get observedAttributes() 
+		{
+		let props=Object.keys(tgEpgTimebar.properties)
+        return props;
+		}
+
 	//######################################################################################################################################
 	//
 	//
@@ -130,7 +71,7 @@ export class tgEpgTimebar extends tgControls
 	connectedCallback ()
 		{
 		var that=this;
-		console.debug("connectedCallback", "start");
+		console.log(" timebatr connectedCallback", "start");
 		if (this.PROPS.run.connected == 0)
 		 	{
 			this.render();

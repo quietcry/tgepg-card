@@ -14,6 +14,7 @@ import './lib/tgControls.Scrollbar.js';
 
 export class tgEpgCard extends tgControls
 	{
+	thisIsClass=true		
 	// private properties
 	_config;
 	_hass;
@@ -26,12 +27,13 @@ export class tgEpgCard extends tgControls
 	_configProfile={}
 	_user={name:null, id:null}
 	_enable_FloatingMnu=false
-	_enable_TimeBar=false
+	_enable_TimeBar=true
 	_enable_Scrollbar=true
 	_enable_DataWorker=true
 	_enable_DataService=false
 	_enable_channelList=true
 	_enable_progList=true
+	_enable_timemarker=true
 	_dataLoopsAllowed=-1
 	// lifecycle
 	constructor(mode="open")
@@ -314,7 +316,6 @@ export class tgEpgCard extends tgControls
 		{
 		var that = this
 		if (!this.app) return
-		//console.debug("start rendering", data)
 		//console.info("rendering", this.channelListApp, this.progListApp)
 		if (data.todolist)
 			{
@@ -346,7 +347,7 @@ export class tgEpgCard extends tgControls
 			{
 			let keys=Object.keys(data.todolist)
 			let refresh=false
-			console.log("proglist run todo", data.todolist)
+			//console.log("proglist run todo", data.todolist)
 			for (let key of keys)
 				{
 				if (key.startsWith("m"))
@@ -357,6 +358,7 @@ export class tgEpgCard extends tgControls
 							{
 							refresh=true
 							this.PROPS.run=this._extender(this.PROPS.run, config)
+							console.log("config", config)
 							}	
 						}
 					}
@@ -432,11 +434,14 @@ export class tgEpgCard extends tgControls
 		if (this._enable_Scrollbar) 	activateScrollbars.call(this)
 		if (this._enable_channelList)	activateChannellist.call(this)
 		if (this._enable_progList)		activateProglist.call(this)
+		if (this._enable_timemarker)    this.progListApp.enableTimemarker = this._enable_timemarker
+
+
 		let viewport=document.documentElement;
 		if (viewport) this._resizeObserver.observe(viewport)
 
-		this.PROPS.run["states"]["constructed"]=true
 
+		this.PROPS.run["states"]["constructed"]=true
 		return;
 		
 		
@@ -465,9 +470,6 @@ export class tgEpgCard extends tgControls
 				this.dependedApps.push({app:this.progListApp});
 				}
 			}
-		
-		
-		
 		function activateTimeBar()
 			{
 			var that=this;
@@ -521,6 +523,12 @@ export class tgEpgCard extends tgControls
 	refreshAppSizeAfterResizeOrInit()
 		{
 		this.setCssProps(this.PROPS.run.currentProfile.design)
+		if (this.progListApp && this.PROPS.run.min)
+			{
+			this.progListApp.timelinestart= parseInt(this.PROPS.run.min)
+			//this.progListApp.scale= parseFloat(profile.scale);
+			console.log("progListApp attributeChangedCallback", this.progListApp)	
+			}
 		//this.renderSubApp()
 		//this._debug("refreshAppSizeAfterResizeOrInit")
 		// this.style.setProperty('--first-row-height', parseInt(this.PROPS.run.firstRowHeight)+"px");

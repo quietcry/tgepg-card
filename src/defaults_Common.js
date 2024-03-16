@@ -16,10 +16,10 @@ export class tgEpgDefaultsCommon
 		{
 		return this._extender({}, this.PROPS||{false:""});
 		}
-	static get properties()
+
+	get properties()
 		{
-		var props={};
-		return props;
+		return {_common:true};
 		}
 
 	static get styles()

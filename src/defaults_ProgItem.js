@@ -2,6 +2,7 @@ import { tgEpgDefaultsCommon }  from "./defaults_Common.js"
 
 export class tgEpgProgItemDefaults extends tgEpgDefaultsCommon
 	{
+	thisIsClass=true	
 	constructor()
 		{
 		super("open");
@@ -13,6 +14,14 @@ export class tgEpgProgItemDefaults extends tgEpgDefaultsCommon
 									}),
 						}
 		}
+	get properties()
+		{
+		var props=super.properties||{_common:false};
+		props["_default"]=true;
+		props["span"]=null;
+		return props;
+		}
+
 	static get template()
 		{
 		var styles=super.styles||"";
@@ -96,13 +105,4 @@ export class tgEpgProgItemDefaults extends tgEpgDefaultsCommon
 					`;
 			return	tmp;
 		}
-	static get properties()
-		{
-		var props=super.properties||{};
-		props["span"]=null;
-		props["channelrowheight"]="50";
-
-		return props;
-		}
-
 	}

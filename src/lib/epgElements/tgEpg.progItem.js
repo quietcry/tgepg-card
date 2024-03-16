@@ -92,37 +92,37 @@ export class tgEpgProgItem extends tgControls
 	//
 	//
 	//######################################################################################################################################
-	template()
-		{
-		let tmp = tgEpgProgItemDefaults.template;
+	// template()
+	// 	{
+	// 	let tmp = tgEpgProgItemDefaults.template;
 
-		return tmp;
-		}
-	// //######################################################################################################################################
-	// //
-	// // properties()
-	// // collect name-value pairs to use as observed Atrributes and the corresponding this->PROPS->attr
-	// //
-	// //######################################################################################################################################
-	static get properties()
-		{
-		let props=	tgEpgProgItemDefaults.properties || {};
-		let superProps=super.properties||{};
-		props=Object.assign(superProps,props);
-		return props;
-		}
-	// //######################################################################################################################################
-	// //
-	// //
-	// //
-	// //######################################################################################################################################
-	static get observedAttributes()
-	 	{
-		let props=tgEpgProgItem.properties;
-		props=Object.keys(props);
-		console.debug("observedAttributes tgEpgProgItem", props)
-		return  props;
-  	 	}
+	// 	return tmp;
+	// 	}
+	// // //######################################################################################################################################
+	// // //
+	// // // properties()
+	// // // collect name-value pairs to use as observed Atrributes and the corresponding this->PROPS->attr
+	// // //
+	// // //######################################################################################################################################
+	// static get properties()
+	// 	{
+	// 	let props=	tgEpgProgItemDefaults.properties || {};
+	// 	let superProps=super.properties||{};
+	// 	props=Object.assign(superProps,props);
+	// 	return props;
+	// 	}
+	// // //######################################################################################################################################
+	// // //
+	// // //
+	// // //
+	// // //######################################################################################################################################
+	// static get observedAttributes()
+	//  	{
+	// 	let props=tgEpgProgItem.properties;
+	// 	props=Object.keys(props);
+	// 	console.debug("observedAttributes tgEpgProgItem", props)
+	// 	return  props;
+  	//  	}
 	// //######################################################################################################################################
 	// //
 	// //

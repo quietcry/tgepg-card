@@ -2,23 +2,28 @@ import { tgControlsHelperBasic } from './tgControls.helper_basic.js';
 
 export class tgControls extends HTMLElement
 	{
-	constructor(mode, defaultClass=null)
+	constructor(mode="open", defaultClass=null)
 		{
-		mode = ((mode) ? mode : "closed")
 		super(mode);
 		this.helper = new tgControlsHelperBasic();
 		this.YES=this.helper.YES; this.NO=this.helper.NO
 		//if (!defaultClass) this._warn("defaultClass", mode, defaultClass)
 
 		this.defaultClass=(this._getType(defaultClass,'class' )==1)?defaultClass:null;
+		//this._observedAttributes = this.getAttributeNames()
+		var attr=(this.defaultClass)?this.defaultClass?.properties||{_default:"wrong"}:{_default:false}
+		this._observedAttributes = Object.keys(attr).filter((item) => !item.startsWith('_'))
 		this._shadowRoot = createShadow.call(this, ((mode) ? mode : "closed"));
+
 		this.PROPS 	=this._extender(
 					{
 					defaults:	{msg:{log:false, warn:false, error:false, debug:false, showid:false}	},
 					run:		this._extender({},{states:{}, orientationObserver:{orientation:screen.orientation.type.replace(/-.+$/g, ""), angle:0, orientationExact:""}, sizeObserver:{dir:"xy", width:0,height:0,orientation:"" }},tgControls.properties)
 					},
-					(this.defaultClass)?this.defaultClass?.getPROPS||{}:{}
+					(this.defaultClass)?this.defaultClass?.getPROPS||{}:{},
+					{attr:attr}
 					);
+		//console.log("PROPS", this.PROPS)			
 		this.PROPS.run=this._extender(	this.PROPS.run,
 											this.PROPS.defaults,
 											((! mode) || (mode != "closed"))?{msg:{debug:true,log:true,error:true,warn:true,showid:true}}:{})
@@ -106,7 +111,29 @@ export class tgControls extends HTMLElement
 	//
 	//
 	//######################################################################################################################################
-		//######################################################################################################################################
+	static get properties()
+		{
+		return {};
+		}
+	//######################################################################################################################################
+	//
+	//
+	//
+	//######################################################################################################################################
+	// static get observedAttributes() 
+	// 	{
+	// 	console.log("this._observedAttributes", this)	
+    //     return this._observedAttributes;
+	// 	}
+	// static get observedAttributes()
+	//  	{
+			
+	// 	let props=properties;
+	// 	props=Object.keys(props);
+	// 	return  props;
+  	//  	}
+
+	//######################################################################################################################################
 	//
 	//
 	//

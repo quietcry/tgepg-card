@@ -2,6 +2,7 @@ import { tgEpgDefaultsCommon }  from "./defaults_Common.js"
 
 export class tgEpgTimebarDefaults extends tgEpgDefaultsCommon
 	{
+	thisIsClass=true		
 	constructor()
 		{
 		super("open");
@@ -14,19 +15,12 @@ export class tgEpgTimebarDefaults extends tgEpgDefaultsCommon
 						}
 
 		}
-
-	static get properties()
+	get properties()
 		{
-		var props=super.properties||{};
-		props["previewSpan"]=null;
-		props["previewOffset"]=null;
-		props["previewStart"]=null;
-		props["previewEnd"]=null;
-		props["scale"]=null;
-		props["supermaster"]=null;
-		console.debug("get properties fct in defaults timebar:", props)
+		var props=super.properties||{_common:false};
+		props["_default"]=true;
 		return props;
-		}
+		}	
 			
 	static get template()
 		{

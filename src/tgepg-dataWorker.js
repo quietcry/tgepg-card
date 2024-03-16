@@ -431,6 +431,11 @@ export class tgEpgDataService
 				max=(max===null || max < end   )?end:max
 				}
 			}
+		let dt=new Date(min*1000)
+		min=Math.floor(new Date(`${this._get2digit(dt.getFullYear(),4)}-${this._get2digit(dt.getMonth()+1,2)}-${this._get2digit(dt.getDate(),2)}T${this._get2digit(dt.getHours()+1,2)}:00:00`)/1000)
+		dt=new Date(max*1000)
+		max=Math.floor(new Date(`${this._get2digit(dt.getFullYear(),4)}-${this._get2digit(dt.getMonth()+1,2)}-${this._get2digit(dt.getDate(),2)}T${this._get2digit(dt.getHours()+1,2)}:00:00`)/1000)
+			
 		let result={todolist:{}, data:{}}	
 		for ( let chankey in that.channels.data)
 			{
@@ -447,11 +452,11 @@ export class tgEpgDataService
 					{
 					let start=(channel.data[indexes[0]].changedStart || channel.data[indexes[0]].start)
 					let end=(channel.data[indexes[indexes.length - 1]].changedEnd || channel.data[indexes[indexes.length - 1]].end)
-					let xend=channel.data[indexes[0]].end
-					let xstart=channel.data[indexes[indexes.length - 1]].start
+					//let xend=channel.data[indexes[0]].end
+					//let xstart=channel.data[indexes[indexes.length - 1]].start
 					//let msg1=`${new Date(start * 1000).toLocaleString()} - ${new Date(xend * 1000).toLocaleString()}`
-					let msg1=`${new Date(xstart * 1000).toLocaleString()} - ${new Date(end * 1000).toLocaleString()}|`
-					let msg2=`${(channel.data[indexes[0]].tolerance)?channel.data[indexes[0]].tolerance:""}|`
+					//let msg1=`${new Date(xstart * 1000).toLocaleString()} - ${new Date(end * 1000).toLocaleString()}|`
+					//let msg2=`${(channel.data[indexes[0]].tolerance)?channel.data[indexes[0]].tolerance:""}|`
 					
 
 					result.data[chankey]["preSpan"]=start-min
@@ -669,6 +674,12 @@ export class tgEpgDataService
 		}
 
 
+	_get2digit(dig, len=2)
+		{
+		dig=dig+""
+		while (dig.length<len){dig="0"+dig}
+		return dig
+		}
 
 
     }

@@ -47,17 +47,12 @@ export class tgEpgCardDefaults extends tgEpgDefaultsCommon
 							}),
 						}
 		}
-
-	static get properties()
+	get properties()
 		{
-		var props=super.properties||{};
-		props["dataref"]=null;
-		props["timerowheight"]="50";
-		props["channelrowheight"]="50";
-		props["channelcolumnwidth"]="150";
-		console.debug("get properties fct in defaults card:", props)
+		var props=super.properties||{_common:false};
+		props["default"]=true;
 		return props;
-		}
+		}		
 
 	static get template()
 		{

@@ -2,6 +2,7 @@ import { tgEpgDefaultsCommon }  from "./defaults_Common.js"
 
 export class tgEpgProgListDefaults extends tgEpgDefaultsCommon
 	{
+	thisIsClass=true		
 	constructor(that)
 		{
 		super("open", that);
@@ -13,6 +14,15 @@ export class tgEpgProgListDefaults extends tgEpgDefaultsCommon
 									}),
 						}
 		}
+	// get properties()
+	// 	{
+	// 	var props=super.properties||{_common:false};
+	// 	props["_default"]=true;
+	// 	props["scale"]=null;
+	// 	props["timelinestart"]=""+ Math.floor(new Date() / 1000)-(30*60);
+	// 	return props;
+	// 	}	
+
 	static get template()
 		{
 		var styles=super.styles||"";
@@ -21,6 +31,7 @@ export class tgEpgProgListDefaults extends tgEpgDefaultsCommon
 			
 			:host
 				{
+				--timeMarkerWidth: 2px;
 				display:inline-block;
 				font-size:12px;
 				overflow-x:auto;
@@ -45,7 +56,7 @@ export class tgEpgProgListDefaults extends tgEpgDefaultsCommon
 				display:inline-block;
 				position:relative;
 				}
-			.TabCell > .Tab
+			.Progline
 				{
 				height:100% !important;
 				max-height:100% !important;
@@ -102,11 +113,12 @@ export class tgEpgProgListDefaults extends tgEpgDefaultsCommon
 			[name="timemarker"]
 				{
 				position:absolute;
-				width:2px;
+				width: var( --timeMarkerWidth, 5px);
 				background-color: red;
 				z-index: 2000;
 				top: 0px;
-				height: 100%
+				height: 100%;
+				left: calc( var(--timeMarkerOffset) * var(--scale) - calc( var(--timeMarkerWidth) / 2 ))
 				}
 			[genre="10"]
 				{
@@ -152,15 +164,4 @@ export class tgEpgProgListDefaults extends tgEpgDefaultsCommon
 				`;
 			return	tmp;
 		}
-	static get properties()
-		{
-		var props=super.properties||{};
-		props["dataref"]=null;
-		props["timerowheight"]="50";
-		props["channelrowheight"]="50";
-		props["channelcolumnwidth"]="150";
-
-		return props;
-		}
-
 	}

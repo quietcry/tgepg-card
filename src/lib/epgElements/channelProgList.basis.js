@@ -1,19 +1,10 @@
-/*
-* tgEPG component
-*
-* Copyright (c) 2020-2021 Thomas Geißenhöner <quietcry@gmx.de>
-* Under MIT License (http://www.opensource.org/licenses/mit-license.php)
-*
-*
-*/
-
 import { tgControls } from "../tgControls.js";
 
 export class channelProgListBasis extends tgControls
 	{
-	constructor(defaultclass, properties)
+	constructor(mode="open", defaultclass, properties)
 		{
-		super("open", defaultclass);
+		super(mode, defaultclass, properties);
 		var that=this;
 		this["PROPS"]=this._extender( (this["PROPS"] || {}),
 						{
@@ -28,60 +19,10 @@ export class channelProgListBasis extends tgControls
 						paras:this._extender({})
 						});
 		// Zeiger auf Elemente aus dem Template
-		this.app = this.shadowRoot.querySelector('[name="app"]');
+		this.app = this._shadowRoot.querySelector('[name="app"]');
 
 
 		}
-
-
-	//######################################################################################################################################
-	//
-	//
-	//
-	//######################################################################################################################################
-	template()
-		{
-		let tmp = `
-			<style>
-			:host
-				{
-				background-color:red;
-				}
-			.hide
-				{
-				display:none;
-				}
-			</style>
-			<div name="app">
-			</div>
-			`
-		return tmp;
-		}
-	//######################################################################################################################################
-	//
-	// properties()
-	// collect name-value pairs to use as observed Atrributes and the corresponding this->PROPS->paras
-	//
-	//######################################################################################################################################
-	static get properties()
-		{
-		//let props=	tgEpgChannelListDefaults.properties || {};
-		let props=	{};
-		let superProps=super.properties||{};
-		props=Object.assign(superProps,props);
-		return props;
-		}
-	//######################################################################################################################################
-	//
-	//
-	//
-	//######################################################################################################################################
-	static get observedAttributes()
-	 	{
-		// let props=super.observedAttributes||[];
-		// props.push("direction")
-		return ["direction"];
-  	 	}
 	//######################################################################################################################################
 	//
 	//
@@ -213,7 +154,7 @@ export class channelProgListBasis extends tgControls
 	set setChannel(val)
 		{
 		//console.debug("setchannel c", val)
-		this.renderChannelLine(val)
+		this.createChannelLine(val)
 		}
 	set deleteChannel(val)
 		{
@@ -225,4 +166,3 @@ export class channelProgListBasis extends tgControls
 	//############################################################################################################################################
 	}
 
-//window.customElements.define('tg-template', webcomponentTemplate);

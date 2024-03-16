@@ -57,18 +57,18 @@ export class tgEpgProgList extends channelProgListBasis
 
 		//this.me=new tgEpgHelper(false);
 
-		this.app = this.shadowRoot.querySelector('[name="app"]');
+		//this.app = this.shadowRoot.querySelector('[name="app"]');
 		// this.buttonCell = this.shadowRoot.querySelector('[name="buttonCell"]');
 
 		// this.channelBox = this.shadowRoot.querySelector('[name="channelBox"]');
 		// this.programBox = this.shadowRoot.querySelector('[name="programBox"]');
 		// this.timeBar = this.shadowRoot.querySelector('[name="timeBar"]');
 		// this.timeRow = this.shadowRoot.querySelector('[name="timeRow"]');
-		this.timeMarker = that.shadowRoot.querySelector('[name="timemarker"]');
+		this.timeMarker = this._shadowRoot.querySelector('[name="timemarker"]');
 		// this.superButton = that.shadowRoot.querySelector('#superbutton');
 		// this.floatingMenu = that.shadowRoot.querySelector('[name="app"]>tg-floatingMenu');
 
-
+//console.log (this.app, this.timeMarker)
 
 
 /*
@@ -85,15 +85,15 @@ export class tgEpgProgList extends channelProgListBasis
 
 		//this._log("construction ended", "props:",this.PROPS, "me:", this);
 		//this._debug("constructor - constructed");
-
+		this.init()
 		}
 
 	//######################################################################################################################################
-	//renderChannelLine()
+	//createChannelLine()
 	//fügt einen Channel in die Liste
 	//
 	//######################################################################################################################################
-	renderChannelLine(channel)
+	createChannelLine(channel)
 		{
 		var that=this
 		var id="progline_"
@@ -111,10 +111,9 @@ export class tgEpgProgList extends channelProgListBasis
 					{
 					return	
 					}	
-		//		console.log("renderChannelLine", channel.data)	
 				row =this._htmlToElement(	`<div class="TabRow" id="${id}" >
 											<div class="TabCell">
-												<div class="Tab">
+												<div class="Tab Progline">
 													<div name="container" class="TabRow">
 														<tgepg-progitem class="TabCell" span="0" name="startplaceholder">ol8izu		</tgepg-progitem>
 														<tgepg-progitem class="TabCell" span="0" name="endplaceholder">dafgfd		</tgepg-progitem>
@@ -128,8 +127,6 @@ export class tgEpgProgList extends channelProgListBasis
 
 			row=row.querySelector('[name="container"]')
 			if (!row) return
-// //console.debug(row)
-//console.log("renderChannelLine xx", channel.data)	
 
 			var firstitem= row.querySelector(`[name="startplaceholder"]`)
 			var lasttitem= row.querySelector(`[name="endplaceholder"]`)
@@ -145,7 +142,7 @@ export class tgEpgProgList extends channelProgListBasis
 			if (channel.todolist)
 				{
 				let keys=Object.keys(channel.todolist)
-				console.debug("proglist todo", keys)	
+				//console.debug("proglist todo", keys)	
 				for (let key of keys)
 					{
 					if (key.startsWith("d"))
@@ -183,7 +180,7 @@ export class tgEpgProgList extends channelProgListBasis
 					{
 					if (key.startsWith("m"))
 						{
-						console.debug("proglist manage channel", channel)
+						//console.debug("proglist manage channel", channel)
 						let elem=row.querySelector(`[name="startplaceholder"]`)
 						if (channel.preSpan && elem)
 							{
@@ -209,130 +206,42 @@ export class tgEpgProgList extends channelProgListBasis
 	//prüft die Umgebung und passt Parameter entsprechend an
 	//
 	//######################################################################################################################################
-	addLine(id, rawFilter=[], item={}, that, html="", shown=true)
+	init()
 		{
-		////console.debug("addline", html)
+		this.initTimemarker()
+		}
+	//######################################################################################################################################
+	//initTimemarker()
+	//prüft die Umgebung und passt Parameter entsprechend an
+	//
+	//######################################################################################################################################
+	initTimemarker()
+		{
 		var that=this
-		id="progline_"+id
-		var filter=rawFilter.join(",")
-		var row =this.app.querySelector(`#${id}`)
-		if (! row)
+		if  ( ( ! this.timeMarker) || ( ! this.PROPS.attr.timelinestart) || (! this.PROPS.attr.enableTimemarker))
 			{
-			row=this.htmlToElement(	`<div class="TabRow" filter="${filter}" id="${id}" >
-										<div class="TabCell">
-											<div class="Tab">
-												<div name="container" class="TabRow">
-													<tgepg-progitem class="TabCell" span="0" name="startplaceholder"><tgepg-progitem>
-													<tgepg-progitem class="TabCell" span="0" name="endplaceholder"><tgepg-progitem>
-												</div>
-											</div>
-										</div>
-									</div>
-									`)
-			this.app.appendChild(row);
+			return
 			}
-		if (!shown) row.classList.add("hide")
-		row=row.querySelector('[name="container"]')
+		let now=Math.floor(new Date() / 1000);
+		let offset=(now - this.PROPS.attr.timelinestart )
+		this.timeMarker.style.setProperty('--timeMarkerOffset', offset+"px");
+		that.timeMarker.classList.remove("hide")
 
-		var cells=row.querySelectorAll('tgepg-progitem:not([usedfor])')
-		if (cells.length === 0)
-			{
-			row.innerHTML=html
-			}
-		else
-			{
-			var newCells=[]
-			var cell=cells[cells.length-1]
-			cell.setAttribute("span",cell.getAttribute("duration"))
-			this.htmlToElements(html).forEach(element => { if (that.getType(element, "nodeElement")) newCells.push(element) });
-			newCells.forEach(newCell =>
+		if ((! this.timeMarker.hasAttribute("hasTimer")) || (parseInt(this.timeMarker.getAttribute("hasTimer")) !== 1) )
+		 	{
+			that.timeMarker.setAttribute("hasTimer", "1");
+			that.PROPS.run["TimeMarkerHandler"]=setInterval(function ()
 				{
-				var start=parseInt(cell.getAttribute("start"))
-				var end=parseInt(cell.getAttribute("end"))
-				var newstart=parseInt(newCell.getAttribute("start"))
-				var newend=parseInt(newCell.getAttribute("end"))
-				var span=newstart-end
-				if ( span === 0 )
-					{
-					cell.after(newCell)
-					cell=newCell
-					}
-				else if ( span > 0 )
-					{
-					cell.after(this.htmlToElement(`
-					<tg-epg-progitem class="TabCell"
-					span="${span}"
-					start="${end}"
-					end="${newstart}"
-					channelid="${id}"
-					id="${id}_${end}"
-						></tg-epg-progitem>`
-					), newCell)
-					cell=newCell
-					}
-				else if (( span < 0) && (newend <= end))
-					{
-
-					}
-				else if (( span < 0) && (newend > end))
-					{
-					cell.setAttribute("span", newstart-start)
-					cell=newCell
-					}
-
-				})
+				that.initTimemarker()
+				}, 5000);
 			}
-		cells=row.querySelectorAll('tg-epg-progitem:not([usedfor]):not([status])')
-		cells.forEach(cell =>
-			{
-			that.transferPROPS(that, cell)
-			})
-
-
-
-		return
+		//this.addEventListener("scroll", function(ev){this.timeMarker.style.top=this.scrollTop+"px"})
 		}
-
-	//######################################################################################################################################
-	//
-	//
-	//
-	//######################################################################################################################################
-	template()
-		{
-		let tmp = tgEpgProgListDefaults.template;
-
-		return tmp;
-		}
-	//######################################################################################################################################
-	//
-	// properties()
-	// collect name-value pairs to use as observed Atrributes and the corresponding this->PROPS->paras
-	//
-	//######################################################################################################################################
-	static get properties()
-		{
-		let props=	tgEpgProgListDefaults.properties || {};
-		let superProps=super.properties||{};
-		props=Object.assign(superProps,props);
-		return props;
-		}
-	//######################################################################################################################################
-	//
-	//
-	//
-	//######################################################################################################################################
-	static get observedAttributes()
-	 	{
-		let props=tgEpgProgList.properties;
-		props=Object.keys(props);
-		return  props;
-  	 	}
-	//######################################################################################################################################
-	//
-	//
-	//
-	//######################################################################################################################################
+	// //######################################################################################################################################
+	// //
+	// //
+	// //
+	// //######################################################################################################################################
 	connectedCallback ()
 		{
 		var that=this;
@@ -346,103 +255,273 @@ export class tgEpgProgList extends channelProgListBasis
 	//
 	//
 	//######################################################################################################################################
+	static get properties()
+		{
+		let props= 	{
+					timelinestart:null,
+					enableTimemarker:false
+					};
+		let superProps=super.properties||{};
+		props=Object.assign(superProps,props);
+		return props;
+		}
+	//######################################################################################################################################
+	static get observedAttributes() 
+		{
+		let props=Object.keys(tgEpgProgList.properties)
+        return props;
+		}
+	//######################################################################################################################################
+	//
+	//
+	//
+	//######################################################################################################################################
 	attributeChangedCallback(attrName, oldVal, newVal)
 		{
-		if ( (! newVal) || (! this.PROPS.paras.hasOwnProperty(attrName)) || (this.PROPS.paras[attrName]===newVal)) return;
-		oldVal=oldVal || this.PROPS.paras[attrName];
+		if ( (! newVal) || (! this.PROPS.attr.hasOwnProperty(attrName)) || (this.PROPS.attr[attrName]===newVal)) return;
+		oldVal=oldVal || this.PROPS.attr[attrName];
 		if (typeof super.attributeChangedCallback == "function")
 			{
 			super.attributeChangedCallback(attrName, newVal, oldVal );
 			}
 		//this._debug("change Attribute "+attrName, "from", oldVal, "to" , newVal);
-		this.PROPS.paras[attrName]=newVal;
+		this.PROPS.attr[attrName]=newVal;
 		switch (attrName)
 			{
-			case "timerowheight":
-				//this.timeRow.style.height=parseInt(newVal)+"px";
+			case "timelinestart":
+				this.initTimemarker()	
 				break;
-			case "channelfilter":
-				this.setFilter(newVal)
-				break;
-			case "data":
-				this.PROPS.paras["dataref"]=newVal;
-				this.dataHandler.getData(newVal);
+			case "enableTimemarker":
+				this.initTimemarker()	
 				break;
 			default:
 				break;
 			}
 		}
+
+	//######################################################################################################################################
+	//init()
+	//prüft die Umgebung und passt Parameter entsprechend an
+	//
+	//######################################################################################################################################
+	// addLine(id, rawFilter=[], item={}, that, html="", shown=true)
+	// 	{
+	// 	////console.debug("addline", html)
+	// 	var that=this
+	// 	id="progline_"+id
+	// 	var filter=rawFilter.join(",")
+	// 	var row =this.app.querySelector(`#${id}`)
+	// 	if (! row)
+	// 		{
+	// 		row=this.htmlToElement(	`<div class="TabRow" filter="${filter}" id="${id}" >
+	// 									<div class="TabCell">
+	// 										<div class="Tab">
+	// 											<div name="container" class="TabRow">
+	// 												<tgepg-progitem class="TabCell" span="0" name="startplaceholder"><tgepg-progitem>
+	// 												<tgepg-progitem class="TabCell" span="0" name="endplaceholder"><tgepg-progitem>
+	// 											</div>
+	// 										</div>
+	// 									</div>
+	// 								</div>
+	// 								`)
+	// 		this.app.appendChild(row);
+	// 		}
+	// 	if (!shown) row.classList.add("hide")
+	// 	row=row.querySelector('[name="container"]')
+
+	// 	var cells=row.querySelectorAll('tgepg-progitem:not([usedfor])')
+	// 	if (cells.length === 0)
+	// 		{
+	// 		row.innerHTML=html
+	// 		}
+	// 	else
+	// 		{
+	// 		var newCells=[]
+	// 		var cell=cells[cells.length-1]
+	// 		cell.setAttribute("span",cell.getAttribute("duration"))
+	// 		this.htmlToElements(html).forEach(element => { if (that.getType(element, "nodeElement")) newCells.push(element) });
+	// 		newCells.forEach(newCell =>
+	// 			{
+	// 			var start=parseInt(cell.getAttribute("start"))
+	// 			var end=parseInt(cell.getAttribute("end"))
+	// 			var newstart=parseInt(newCell.getAttribute("start"))
+	// 			var newend=parseInt(newCell.getAttribute("end"))
+	// 			var span=newstart-end
+	// 			if ( span === 0 )
+	// 				{
+	// 				cell.after(newCell)
+	// 				cell=newCell
+	// 				}
+	// 			else if ( span > 0 )
+	// 				{
+	// 				cell.after(this.htmlToElement(`
+	// 				<tg-epg-progitem class="TabCell"
+	// 				span="${span}"
+	// 				start="${end}"
+	// 				end="${newstart}"
+	// 				channelid="${id}"
+	// 				id="${id}_${end}"
+	// 					></tg-epg-progitem>`
+	// 				), newCell)
+	// 				cell=newCell
+	// 				}
+	// 			else if (( span < 0) && (newend <= end))
+	// 				{
+
+	// 				}
+	// 			else if (( span < 0) && (newend > end))
+	// 				{
+	// 				cell.setAttribute("span", newstart-start)
+	// 				cell=newCell
+	// 				}
+
+	// 			})
+	// 		}
+	// 	cells=row.querySelectorAll('tg-epg-progitem:not([usedfor]):not([status])')
+	// 	cells.forEach(cell =>
+	// 		{
+	// 		that.transferPROPS(that, cell)
+	// 		})
+
+
+
+	// 	return
+	// 	}
+
+	// //######################################################################################################################################
+	// //
+	// //
+	// //
+	// //######################################################################################################################################
+	connectedCallback ()
+		{
+		var that=this;
+		if (this.PROPS.run.connected == 0)
+		 	{
+		 	this.connected();
+		 	}
+		}
+	//######################################################################################################################################
+	//
+	//
+	//
+	//######################################################################################################################################
+	// attributeChangedCallback(attrName, oldVal, newVal)
+	// 	{
+	// 	if ( (! newVal) || (! this.PROPS.attr.hasOwnProperty(attrName)) || (this.PROPS.attr[attrName]===newVal)) return;
+	// 	console.log("attributeChangedCallback")
+
+
+	// 	oldVal=oldVal || this.PROPS.paras[attrName];
+	// 	if (typeof super.attributeChangedCallback == "function")
+	// 		{
+	// 		super.attributeChangedCallback(attrName, newVal, oldVal );
+	// 		}
+	// 	//this._debug("change Attribute "+attrName, "from", oldVal, "to" , newVal);
+	// 	this.PROPS.paras[attrName]=newVal;
+	// 	switch (attrName)
+	// 		{
+	// 		case "timerowheight":
+	// 			//this.timeRow.style.height=parseInt(newVal)+"px";
+	// 			break;
+	// 		case "channelfilter":
+	// 			this.setFilter(newVal)
+	// 			break;
+	// 		case "data":
+	// 			this.PROPS.paras["dataref"]=newVal;
+	// 			this.dataHandler.getData(newVal);
+	// 			break;
+	// 		default:
+	// 			break;
+	// 		}
+	// 	}
 	//######################################################################################################################################
 	//setter & getter
 	//
 	//
 	//######################################################################################################################################
-	get design_timeFrameStart()
+	// get design_timeFrameStart()
+	// 	{
+	// 	////console.debug("render Appp getter", this.PROPS.run)
+	// 	return this.PROPS.run.timeFrameStart||null;
+	// 	}
+	// set design_timeFrameStart(val)
+	// 	{
+	// 	// if (this.PROPS.run.timeFrameStart != val)
+	// 	// 	{
+	// 	// 	this.PROPS.run["timeFrameStart"]=val;
+	// 	// 	}
+	// 	}
+	// get design_timeFrameEnd()
+	// 	{
+	// 	return this.PROPS.run.timeFrameEnd||null;
+	// 	}
+	// set design_timeFrameEnd(val)
+	// 	{
+	// 	// if (this.PROPS.run.timeFrameEnd != val)
+	// 	// 	{
+	// 	// 	this.PROPS.run["timeFrameEnd"]=val;
+	// 	// 	}
+	// 	}
+	// get design_SpanTime()
+	// 	{
+	// 	return this.PROPS.run.SpanTime||null;
+	// 	}
+	// set design_SpanTime(val)
+	// 	{
+	// 	if (this.PROPS.run.SpanTime != val)
+	// 		{
+	// 		this.PROPS.run["SpanTime"]=val;
+	// 		}
+	// 	}
+	// get design_SpanTimeAll()
+	// 	{
+	// 	return this.PROPS.run.SpanTimeAll||null;
+	// 	}
+	// set design_SpanTimeAll(val)
+	// 	{
+	// 	if (this.PROPS.run.SpanTimeAll != val)
+	// 		{
+	// 		this.PROPS.run["SpanTimeAll"]=val;
+	// 		}
+	// 	}
+	// get design_PastOffsetTime()
+	// 	{
+	// 	return this.PROPS.run.PastOffsetTime||null;
+	// 	}
+	// set design_PastOffsetTime(val)
+	// 	{
+	// 	if (this.PROPS.run.PastOffsetTime != val)
+	// 		{
+	// 		this.PROPS.run["PastOffsetTime"]=val;
+	// 		}
+	// 	}
+	// get now()
+	// 	{
+	// 	return this.PROPS.run.now||null;
+	// 	}
+	// set now(val)
+	// 	{
+	// 	if (this.PROPS.run.now != val)
+	// 		{
+	// 		this.PROPS.run["now"]=val;
+	// 		}
+	// 	}
+	get enableTimemarker()
 		{
-		////console.debug("render Appp getter", this.PROPS.run)
-		return this.PROPS.run.timeFrameStart||null;
+		return this.PROPS.attr.enableTimemarker||null;
 		}
-	set design_timeFrameStart(val)
+	set enableTimemarker(val)
 		{
-		// if (this.PROPS.run.timeFrameStart != val)
-		// 	{
-		// 	this.PROPS.run["timeFrameStart"]=val;
-		// 	}
+		this.attributeChangedCallback("enableTimemarker", this.PROPS.attr.enableTimemarker||null, val)
 		}
-	get design_timeFrameEnd()
+	get timelinestart()
 		{
-		return this.PROPS.run.timeFrameEnd||null;
+		return this.PROPS.attr.timelinestart||null;
 		}
-	set design_timeFrameEnd(val)
+	set timelinestart(val)
 		{
-		// if (this.PROPS.run.timeFrameEnd != val)
-		// 	{
-		// 	this.PROPS.run["timeFrameEnd"]=val;
-		// 	}
-		}
-	get design_SpanTime()
-		{
-		return this.PROPS.run.SpanTime||null;
-		}
-	set design_SpanTime(val)
-		{
-		if (this.PROPS.run.SpanTime != val)
-			{
-			this.PROPS.run["SpanTime"]=val;
-			}
-		}
-	get design_SpanTimeAll()
-		{
-		return this.PROPS.run.SpanTimeAll||null;
-		}
-	set design_SpanTimeAll(val)
-		{
-		if (this.PROPS.run.SpanTimeAll != val)
-			{
-			this.PROPS.run["SpanTimeAll"]=val;
-			}
-		}
-	get design_PastOffsetTime()
-		{
-		return this.PROPS.run.PastOffsetTime||null;
-		}
-	set design_PastOffsetTime(val)
-		{
-		if (this.PROPS.run.PastOffsetTime != val)
-			{
-			this.PROPS.run["PastOffsetTime"]=val;
-			}
-		}
-	get now()
-		{
-		return this.PROPS.run.now||null;
-		}
-	set now(val)
-		{
-		if (this.PROPS.run.now != val)
-			{
-			this.PROPS.run["now"]=val;
-			}
+		this.attributeChangedCallback("timelinestart", this.PROPS.attr.timelinestart||null, val)
 		}
 	get supermaster()
 		{
@@ -605,117 +684,94 @@ export class tgEpgProgList extends channelProgListBasis
 			}
 
 		}
-	addEmptyCellsOnStartAndEnd(row, start, end)
-		{
-		var sCell=row.querySelector('tg-epg-progitem[usedfor="emptyStartCell"]')
-		if (! sCell)
-			{
-			sCell=this.htmlToElement	(
-									`
-									<tg-epg-progitem usedfor="emptyStartCell">
-									</tg-epg-progitem>
-									`
-									)
-			row.prepend(sCell)
-			}
-		var eCell=row.querySelector('tg-epg-progitem[usedfor="emptyEndCell"]')
-		if (! eCell)
-			{
-			eCell=this.htmlToElement	(
-									`
-									<tg-epg-progitem usedfor="emptyEndCell">
-									</tg-epg-progitem>
-									`
-									)
-			row.append(eCell)
-			}
-		var brother =sCell.nextElementSibling
-		if (brother)
-			{
-			let nextStart=parseInt(brother.getAttribute("start") || end)
-			let duration=nextStart-start
-			sCell.setAttribute("duration", duration)
-			sCell.setAttribute("start", start)
-			sCell.setAttribute("end", nextStart)
-			}
-		//console.debug("addEmptyCellsOnStartAndEnd", start, end, row,"\n", sCell,"\n", brother)
+	// addEmptyCellsOnStartAndEnd(row, start, end)
+	// 	{
+	// 	var sCell=row.querySelector('tg-epg-progitem[usedfor="emptyStartCell"]')
+	// 	if (! sCell)
+	// 		{
+	// 		sCell=this.htmlToElement	(
+	// 								`
+	// 								<tg-epg-progitem usedfor="emptyStartCell">
+	// 								</tg-epg-progitem>
+	// 								`
+	// 								)
+	// 		row.prepend(sCell)
+	// 		}
+	// 	var eCell=row.querySelector('tg-epg-progitem[usedfor="emptyEndCell"]')
+	// 	if (! eCell)
+	// 		{
+	// 		eCell=this.htmlToElement	(
+	// 								`
+	// 								<tg-epg-progitem usedfor="emptyEndCell">
+	// 								</tg-epg-progitem>
+	// 								`
+	// 								)
+	// 		row.append(eCell)
+	// 		}
+	// 	var brother =sCell.nextElementSibling
+	// 	if (brother)
+	// 		{
+	// 		let nextStart=parseInt(brother.getAttribute("start") || end)
+	// 		let duration=nextStart-start
+	// 		sCell.setAttribute("duration", duration)
+	// 		sCell.setAttribute("start", start)
+	// 		sCell.setAttribute("end", nextStart)
+	// 		}
+	// 	//console.debug("addEmptyCellsOnStartAndEnd", start, end, row,"\n", sCell,"\n", brother)
 
-		var brother =eCell.previousElementSibling
-		if (brother)
-			{
-			let beforeEnd=parseInt(brother.getAttribute("end") || end)
-			let duration=end - beforeEnd
-			eCell.setAttribute("duration", duration)
-			eCell.setAttribute("start", start)
-			eCell.setAttribute("end", beforeEnd)
-			}
-		//console.debug("addEmptyCellsOnStartAndEnd","\n", brother)
+	// 	var brother =eCell.previousElementSibling
+	// 	if (brother)
+	// 		{
+	// 		let beforeEnd=parseInt(brother.getAttribute("end") || end)
+	// 		let duration=end - beforeEnd
+	// 		eCell.setAttribute("duration", duration)
+	// 		eCell.setAttribute("start", start)
+	// 		eCell.setAttribute("end", beforeEnd)
+	// 		}
+	// 	//console.debug("addEmptyCellsOnStartAndEnd","\n", brother)
 
-		// 	let duration=parseInt(item.nextSibling.getAttribute("start"))-start
+	// 	// 	let duration=parseInt(item.nextSibling.getAttribute("start"))-start
 
 
 
-		// var items=this.shadowRoot.querySelectorAll('tg-epg-progitem[usedfor="emptyStartCell"]:not([duration])');
-		// items.forEach((item) =>
-		// 	{
-		// 	let duration=parseInt(item.nextSibling.getAttribute("start"))-start
-		// 	item.setAttribute("duration", duration)
-		//   	});
-		// items=this.shadowRoot.querySelectorAll('tg-epg-progitem');
-		// items.forEach((item) =>
-		// 	{
-		// 	item.supermaster=this._supermaster
-		// 	});
-		// this.drawStart=start
-		}
+	// 	// var items=this.shadowRoot.querySelectorAll('tg-epg-progitem[usedfor="emptyStartCell"]:not([duration])');
+	// 	// items.forEach((item) =>
+	// 	// 	{
+	// 	// 	let duration=parseInt(item.nextSibling.getAttribute("start"))-start
+	// 	// 	item.setAttribute("duration", duration)
+	// 	//   	});
+	// 	// items=this.shadowRoot.querySelectorAll('tg-epg-progitem');
+	// 	// items.forEach((item) =>
+	// 	// 	{
+	// 	// 	item.supermaster=this._supermaster
+	// 	// 	});
+	// 	// this.drawStart=start
+	// 	}
 
-	initTimemarker()
-		{
-		var that=this
-		if  ( ( ! this.timeMarker) || ( ! this.PROPS.run.scale) || ( ! this.PROPS.run.timeFrameStart) )
-			{
-			return
-			}
-		var now=new Date()
-		now=now.getTime()/1000;
-		var width=parseFloat(that.timeMarker.offsetWidth)
-		var halberTimeMarker =  width / 2;
-		let pos=(now - this.PROPS.run.timeFrameStart )*that.PROPS.run.scale -halberTimeMarker;
-		that.timeMarker.style.left=pos+"px";
-		that.timeMarker.style.width=width+"px";
-		if ((! this.timeMarker.hasAttribute("hasTimer")) || (parseInt(this.timeMarker.getAttribute("hasTimer")) !== 1) )
-			{
-			that.setAttribute("hasTimer", "1");
-			that.PROPS.run["TimeMarkerHandler"]=setInterval(function ()
-				{
-				that.initTimemarker()
-				}, 5000);
-			}
-		this.addEventListener("scroll", function(ev){this.timeMarker.style.top=this.scrollTop+"px"})
-		}
+
 	//#########################################################################################################
 	//## refreshAppSizeAfterResizeOrInit()
 	//##
 	//##
 	//##
 	//#########################################################################################################
-	resize(scale)
-		{
-		var oldScale=parseFloat(this.PROPS.run.scale)
-		var oldScroll=parseFloat(this.scrollLeft)
-		var timeOffset=oldScroll/oldScale
-		this.PROPS.run.scale=scale
-		if 	(this.PROPS.run.scale !== oldScale)
-			{
-			var progItems=this.shadowRoot.querySelectorAll("tg-epg-progitem")
-			progItems.forEach(item =>
-				{
-				item.setAttribute("scale", this.PROPS.run.scale)
-				})
-			this.scrollLeft=timeOffset*scale
-			this.initTimemarker()
-			}
-		}
+	// resize(scale)
+	// 	{
+	// 	var oldScale=parseFloat(this.PROPS.run.scale)
+	// 	var oldScroll=parseFloat(this.scrollLeft)
+	// 	var timeOffset=oldScroll/oldScale
+	// 	this.PROPS.run.scale=scale
+	// 	if 	(this.PROPS.run.scale !== oldScale)
+	// 		{
+	// 		var progItems=this.shadowRoot.querySelectorAll("tg-epg-progitem")
+	// 		progItems.forEach(item =>
+	// 			{
+	// 			item.setAttribute("scale", this.PROPS.run.scale)
+	// 			})
+	// 		this.scrollLeft=timeOffset*scale
+	// 		this.initTimemarker()
+	// 		}
+	// 	}
 
 	//#########################################################################################################
 	//##
