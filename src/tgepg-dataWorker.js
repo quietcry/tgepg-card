@@ -54,33 +54,40 @@ export class tgEpgDataService
         this.basicConfig =
             {
 			pastTimeSec: (1*60*60),
-			previewAll: (7*24*60*60),
-			viewAllowedOversize: (0,5*60*60),	
+			previewAll: (1*24*60*60),
             map:
                 {
-                duration: ["DURATION", "duration", "DURATION"],
-                start: ["START", "start", "START"],
-                end: ["END", "end", "END"],
-                channelid: ["CHANNELID", "channelID", "CHANNELID"],
-				id:["ID", "id", "ID"],
-                title: ["TITLE", "TITLE"],
-				description:["DESCRIPTION", "DESCRIPTION"]
+				duration: ["DURATION", "_duration", "duration", "DURATION"],
+                start: ["START", "_start", "start", "START"],
+                end: ["END", "_end", "end", "END"],
+                CHANNELID: ["CHANNELID", "channelID", "CHANNELID"],
+				ID:["ID", "id", "ID"],
+                TITLE: ["TITLE", "TITLE"],
+				DESCRIPTION:["DESCRIPTION", "DESCRIPTION"],
+				adds:["ADDS", "adds", "ADDS"],
                 },
-            showTemplate: `<tgepg-progitem class="TabCell" span="<!DURATION!>" start="<!START!>" end="<!END!>" channelid="<!CHANNELID!>" id="<!ID!>" style="--progItemSpan: <!DURATION!>px;">
+            showTemplate: `<tgepg-progitem class="TabCell" span="<!DURATION!>" <!ADDS!> start="<!START!>" end="<!END!>" channelid="<!CHANNELID!>" id="<!ID!>" style="--progItemSpan: <!DURATION!>px;">
 							<div slot="titleslot"><!TITLE!></div>
 							<div slot="descriptionslot"><!DESCRIPTION!></div>
 							</tgepg-progitem>`,
-            channelTemplate: `<tgepg-progline class="TabCell" channelid="<!CHANNELID!>" id="<!ID!>"><!SHOWTEMPLATE!></tgepg-progline>`,
+            channelTemplate: `<tgepg-progline class="TabCell" <!ADDS!> channelid="<!CHANNELID!>" id="<!ID!>"><!SHOWTEMPLATE!></tgepg-progline>`,
             };
 		this.me = (me)? me :null	;
         this.channelsHtml = {};
         this.channelsTmpl 	= 	{
-								todolist:{delete:[], add:[]},
 								data:{}
 								};
 		this.channelTmpl	= 	{
-								todolist:{delete:[], add:[]},
-								data:{}
+								sourceID: null,
+								channelID: null,
+								name: null,
+								id: null,
+								preSpan:null,
+								postSpan:null,
+								stock:{},
+								usedItems:[],
+								data:{},
+								epg: {},
 								}
 		this.channels 	= 		this._extender({}, this.channelsTmpl)
 
@@ -89,8 +96,10 @@ export class tgEpgDataService
         }
 	sendDataBack(data)
 		{
+	//console.log("dataa", data)
 		if (this.me instanceof DedicatedWorkerGlobalScope)
 			{
+
 			this.me.postMessage(data) 
 			}
 		else
@@ -98,48 +107,334 @@ export class tgEpgDataService
 			var ev = new CustomEvent('fetchWorkerData', {detail:data});
 			this.me.dispatchEvent(ev);	
 			}
-
-
 		}
 	addRequest(data)
         {
-		if (!this._getType(data, "hash"))
-			{
-			this._warn("data: received",this._getType(data), data)
-			return null	
-			}	
-	
-		//alert("get request")
         var that = this;
+		that.channels["todolist"]={}
+		var now = Math.floor(new Date() / 1000);
+
+        if (data.config && this._getType(data.config, "hash"))
+			{
+        	this.basicConfig = this._extender(this.basicConfig, data.config);
+        	}
+		this._debug("data: basicConfig", this.basicConfig)
+		let dp=new Date((now - parseInt(that.basicConfig.pastTimeSec))*1000)
+		dp.setMinutes(0,0,0)
+		let df=new Date((now + parseInt(that.basicConfig.previewAll))*1000)
+		df.setMinutes(60,0,0)
+
+		var filter=	{
+					now: now,
+					past: dp.getTime()/1000,
+					future: df.getTime()/1000
+					}
+		that.basicConfig.addString=_createAddStringFromConfigAdds(that.basicConfig.adds||{})
+
+		that.basicConfig.showTemplate=(that.basicConfig.showTemplate||"").replace(/\t|\n/g, "")			
+		that.basicConfig.showTemplate=(that.basicConfig.showTemplate||"").replace(/\s+/g, " ")
+		//console.log(that.basicConfig.showTemplate)			
+		// vorhandene Daten aufbereiten				
+		_cleanAllChannels(that.channels, filter)
+		//this._log("old channels cleaned")
+		// neue Daten einfügen
+		if (this._getType(data, "hash") && that.basicConfig.source)
+			{
+			var keys = Object.keys(data);
+			keys.forEach(function (k, i) // alle neuen channels
+				{
+				var channel=_isValidChannel(that.channels, data[k], that.basicConfig.source, that.channelTmpl , filter)
+				if (!channel)
+					{
+					return;	
+					}
+				})
+			}
+		//this._log("channel stores updated")
+
+		var result={todolist:that.channels.todolist||{}, data:{}}
+		let channels=Object.keys(that.channels.data)
+		let min, max=null
+		channels.forEach(function (key, i)
+			{
+			let isError=null
+			if (Object.keys(that.channels.data[key].stock).length == 0)
+				{
+				delete that.channels.data[key]
+				return	
+				} 	
+			//console.log(">>", that.channels.data[key])
+	
+			while(isError!=0)
+				{
+				_prepareShows(that.channels.data[key], filter)
+
+				//that._log(`shows prepaired for ${key} `, that.channels.data[key])
+				that.channels.data[key]["adds"]=that.basicConfig.addString
+				let res=_prepareResult(that.channels.data[key], filter, that.basicConfig.showTemplate, that.basicConfig.map )
+				isError=(isError)?0:(!res)?1:0
+				if (!res)
+					{
+					that.channels.data[key].usedItems=[]	
+					continue
+					}
+				that.channels.data[key].epg={}
+				min=(!min)?res.min:(min>res.min)?res.min:min
+				max=(!max)?res.max:(max<res.max)?res.max:max
+				that.channels.data[key]["min"]=res.min	
+				that.channels.data[key]["max"]=res.max	
+				result.data[key] =	res
+				//console.log("result:", res.min, min, res.max,  max, res)	
+				if (that.me)
+					{
+				 	that.sendDataBack(that._extender({}, result))
+					result.data={}	
+					}								
+				//console.log("resault", result)	
+				}
+			})
+		channels=Object.keys(that.channels.data)
+		channels.forEach(function (key, i)
+			{
+			if (!result.data[key])	result.data[key]={id:key, data:{}}
+			result.data[key]["preSpan"]=that.channels.data[key].min-min
+			result.data[key]["postSpan"]=max-that.channels.data[key].max
+			_addTodolist(result, "manage", key)	
+			})
+		_addTodolist(result, "config", {min:min, max:max, now: filter.now})	
+
+		if (that.me)
+			{
+			that._debug("dataworker send WorkerData", result)
+			that.sendDataBack(result)	
+			}
+		else
+			{
+			//that._debug("send WorkerData manager", result)		
+			return result	
+			}		
+		return;
+
+		//###############################
+		function _createAddStringFromConfigAdds(adds={})
+			{
+			var str=""
+			let keys=Object.keys(adds)
+			for (let key of keys)
+				{
+				str+=` ${key}='${adds[key]}'`	
+				}
+			return str
+			}
+        //###############################
+        //###############################
+		function _prepareResult(channel, filter, templ, map)
+			{
+			let stock=channel.stock
+			//that._log("chan:", channel)	
+			let result=	{
+						todolist:channel.todolist, 
+						data:{},
+						id:channel.id,
+						name:channel.name,
+						sourceID:channel.sourceID,
+						channelID:channel.channelID,
+						html:""
+						}
+			let data=result.data				
+			let shows=channel.usedItems.sort()
+			var lastShow=null
+			let min, max=null
+			shows.forEach(function (key, index)
+				{
+				//that._log(key, channel)	
+				let show=stock[key]
+				show["html"]=""
+				show["_start"]=show.start
+				show["_duration"]=show.duration
+				show["_end"]=show.end
+				show["adds"]=channel.adds
+
+
+				if (show.end > filter.past && show.start < filter.past)
+					{
+					show._start=(filter.past)	
+					show._duration=show._end-show._start
+					}
+				if (show.start < filter.future && show.end > filter.future )
+					{
+					show._end=(filter.future)	
+					show._duration=show._end-show._start
+					}
+				let diff= (lastShow)?show._start-lastShow._end:0	
+				if (diff > 0)
+					{
+					let newItem=	
+						{
+						key:		lastShow._end.toString(),
+						_start:		lastShow._end,
+						_duration:	diff,
+						_end:		show._start,
+						_type: 		"spacer"
+						}
+					newItem["html"]=_template_mapper(templ, map, newItem)
+					data[lastShow._end.toString()]=newItem	
+					_addTodolist(result, "addSpacer", newItem.key )							
+					}
+				else if (diff < 0)
+					{
+					diff=diff * -1	
+					//shorten items
+					if (diff < lastShow._duration)
+						{
+						lastShow._end=show._start	
+						lastShow._duration=lastShow._end-lastShow._start	
+						lastShow.html=_template_mapper(templ, map, lastShow)
+						_addTodolist(result, "replace", lastShow.key )
+						}
+					else
+						{
+						lastShow.type="epgerror"
+						lastShow._duration=0		
+						lastShow.html=_template_mapper(templ, map, lastShow)
+						return
+						}						
+					}						
+				show.html=_template_mapper(templ, map, show)
+				data[key]=show				
+				lastShow=show
+				min=(!min)?show._start:(min>show._start)?show._start:min
+				max=(!max)?show._end:(max<show._end)?show._end:max
+				})
+			result["min"]=min	
+			result["max"]=max	
+			//console.log("result::", result)
+			let keys=Object.keys(data).sort()
+			for ( let key of keys)
+				{
+				result.html+=data[key].html	|| ""
+				}	
+			return result
+			}
+        //###############################
+        //###############################
+		function _prepareShows(channel, filter)
+			{
+			//that._log("prepair", that.channels)	
+			let shows=Object.keys(channel.stock).sort()
+			shows.forEach(function (show, i)
+				{
+				//if ((channel.stock[show].end >= filter.past || channel.stock[show].start <= filter.future) && ( !channel.usedItems.includes(show)))
+				if (
+					(channel.stock[show].end >= filter.past  && channel.stock[show].start <= filter.future) && ( !channel.usedItems.includes(show)))
+					{
+					channel.usedItems.push(show)
+					_addTodolist(channel, "add", show)
+					}
+				})
+			//console.log("toodo _prepareShows", channel)	
+			}
+        //###############################
+        //###############################
+		function _isValidChannel(channels, newChannel, source, tmpl, filter)
+			{
+			let srcData = that._getType(newChannel, "jsonstring") ? that._JSONcorrector(newChannel) : "";
+			if ( that._getType(srcData, "hash") && srcData.channeldata && srcData.epg ) // valid channel
+				{
+				return _createChannelItem(channels, srcData, source, tmpl , filter )
+				}
+			}
+        //###############################
+        //###############################
+		function _cleanChannel(channel, filter, what=[])
+			{
+			// veraltete Stock-Items aus dem Stock werfen
+			if (what.length == 0 || what.includes("stock"))
+				{
+				var keys = Object.keys(channel.stock||{});
+				for (let key of keys)
+					{
+					let item=channel.stock[key]	
+					if (item.end <= filter.past)
+						{
+						delete channel.stock[key];
+						if (channel.usedItems.includes(key) )
+							{
+							channel.usedItems.splice(channel.usedItems.indexOf(key),1)
+							_addTodolist(channel,"delete",key)
+							}
+						}
+					}
+				}
+			// veraltete EPG.Items entfernen, den Rest zum Stock hinzu
+			if (what.length == 0 || what.includes("epg"))
+				{
+				var keys = Object.keys(channel.epg||{});
+				for (let key of keys)
+					{
+					let reg=new RegExp(/^[0-9]+$/)	
+					if (reg.test(key))
+						{
+						let item=_createShowItem(key, channel.epg[key], channel.id)
+						if (item.end > filter.past)
+							{
+							channel.stock[key]=item	
+							}
+						}	
+					}
+				}			
+			//channel.epg={}
+			}
+        //###############################
+        //###############################
+		function _cleanAllChannels(cs, filter)
+			{
+			let channels=cs.data||{}
+			var keys = Object.keys(channels);
+			keys.forEach(function (key, i)
+				{
+				let channel=channels[key]	
+				if (_isBlacklisted([channel.name, channel.channelID, channel.sourceID ]))
+					{
+					_addTodolist(cs, "delete_blacklist", channel.id )
+					delete cs.data[key]
+					return
+					}
+				channel["todolist"]={}
+				_cleanChannel(channel, filter)				
+				})
+			}
+        //###############################
         //###############################
 		function _template_mapper(templ, map, source)
 			{
 			var mapkeys = Object.keys(map);
 			var sourcekeys = Object.keys(source);
-			mapkeys.forEach(function (k, i)
+			for (let index of mapkeys)
 				{
-				let needle=`<!${map[k][0]}!>`
-				if (templ.includes(needle))
+				const needle = new RegExp(`<!${map[index][0]}!>`, "gi");
+				if (needle.test(templ))
 					{
-					for (let p=1; p<map[k].length;p++)
+					for (let p=1; p<map[index].length;	p++)
 						{
-						if (sourcekeys.includes(map[k][p]))
+						if ( ! (map[index][p] in source) ) continue
+						let txt=source[map[index][p]]
+
+						let tpl=templ.replaceAll(needle, txt)
+						if (tpl != templ)
 							{
-							const regex = new RegExp(needle, "gi");
-							templ=templ.replaceAll(regex, source[map[k][1]])
-							break
+							templ=tpl
+							break	
 							}
 						}
-
 					}
-				})
-			//console.debug("_template_mapper", source, templ)
+				}
 			return templ
 			}
         //###############################
         //###############################
-        function _createShowItem(index, epg, id)
-            {
+        function _createShowItem(index, epg, channelID)
+            {		
 			let item=that._extender({},epg)
 			let start = (index.match(/^[0-9]+$/g)) ? parseInt(index) : false;
 			let duration = epg[that.basicConfig.map.duration[0]] || false
@@ -152,104 +447,50 @@ export class tgEpgDataService
 					key:		(start)?start.toString():false,
                     epg:    	that._extender({}, epg),
                     html:  		"",
-					id:			`${id}_${start}`
+					id:			`${channelID}_${start}`
 					})
 			item.html=_template_mapper(that.basicConfig.showTemplate, that.basicConfig.map, item)
             return item
             }
         //###############################
         //###############################
-		function _cleanTodolist(list={delete:[],replace:[], add:[]})
-			{
-			// var keys = Object.keys(list);
-			// keys.forEach(function (k, i)
-			// 	{
-			// 	list[k]=[]
-			// 	})
-			return list
-			}
-        //###############################
-        //###############################
 		function _addTodolist(obj=null, key=null, val=null)
 			{
-			if ( ! obj.todolist) obj["todolist"]=_cleanTodolist()
+			if ( ! obj.todolist) obj["todolist"]={}
 			if ( ! obj.todolist[key]) obj["todolist"][key]=[]
 			obj.todolist[key].push(val)
 			return obj
 			}
         //###############################
         //###############################
-		function _cleanChannel(c, filter)
+		function _createChannelItem(channels, srcData, source, tmpl, filter)
 			{
-			var tmp=that._extender({},c.epg||{},c.tmp||{})	
-			//console.log("dataworker", "_cleanChannel", c)	
-			var keys = Object.keys(c.stock||{});
-			keys = keys.sort();
-			for (let key of keys)
+			let id = srcData.channeldata.channelid
+			let channelkey = `${source}_${id}`;
+			if (!channels.data[channelkey]) 
 				{
-				if (c.stock[key].end < filter.past-filter.tolerance)
-					{
-					delete c.stock[key];
-					}
-				else if (c.stock[key].end >= filter.past && c.stock[key].start <= filter.future)
-					{
-					tmp[key]=	that._extender({},c.stock[key])
-					delete c.stock[key];
-					}
+				channels.data[channelkey] = that._extender({}, tmpl)
 				}
-			var keys = Object.keys(tmp);
-			keys = keys.sort();
-			//Aufräumen: abgelaufene Sendungen entfernen
-			for (let key of keys)
+			let channel=channels.data[channelkey]
+			channel["sourceID"] = source;
+			channel["channelID"] = srcData.channeldata.channelid
+			channel["name"] = srcData.channeldata.name
+			channel["id"] = channelkey;
+			channel["epg"] = srcData.epg||{};
+			channel["preSpan"]=0
+			channel["postSpan"]=0
+			channel["stock"]=channel.stock||{}
+			channel["usedItems"]=[]
+			_cleanChannel(channel, filter, ["epg"])
+			let lastUpdate=Math.floor(Date.parse(srcData.channeldata.lastUpdate||0)/1000)
+			if (((lastUpdate||0) <= (channel.lastUpdate||0)) || _isBlacklisted([channel["name"], channel["channelID"], channel["sourceID"] ]))
 				{
-				tmp[key]=(!tmp[key].start)?_createShowItem(key, tmp[key], c.channelID):tmp[key]	
-				
-				//console.log("dataworker", "stock", tmp[key] , filter)	
-
-				if (tmp[key].end < filter.past)
-					{
-					delete tmp[key];
-					}
-				else if (tmp[key].start > filter.future)
-					{
-					//console.log("dataworker", "add to stock")	
-						
-					c.stock[key]=	that._extender({},tmp[key])
-					delete tmp[key];
-					}
+				return false;	
 				}
-			return tmp
-			}
-
-        //###############################
-        //###############################
-		function _createChannelItem(c, srcChannel, source, tmpl, filter)
-			{
-			let channelkey = `${source}_${srcChannel.channeldata.channelid}`;
-			if (!c.data[channelkey]) c.data[channelkey] = that._extender({}, tmpl)	
-			let item=c.data[channelkey]
-			item["sourceID"] = source;
-			item["channelID"] = srcChannel.channeldata.channelid
-			item["name"] = srcChannel.channeldata.name
-			item["id"] = channelkey;
-			item["epg"] = srcChannel.epg||{};
-			item["todolist"]=_cleanTodolist()
-			item["preSpan"]=0
-			item["postSpan"]=0
-			item["stock"]=item.stock||{}
-
-			item["tmp"]=_cleanChannel(item, filter)
-			//console.log("dataworker", "_createChannelItem", item)
-
-			let lastUpdate=Math.floor(Date.parse(srcChannel.channeldata.lastUpdate||0)/1000)
-			if (((lastUpdate||0) <= (item.lastUpdate||0)) || _isBlacklisted([item["name"], item["channelID"], item["sourceID"] ]))
-				{
-				return ;	
-				}
-			item["lastUpdate"]=lastUpdate
-			return item
+			channel["lastUpdate"]=lastUpdate
+			return channel
 			}		
-        // ###############################
+        // ###############################	
         // ###############################
 		function _isBlacklisted(stack)
 			{
@@ -283,209 +524,8 @@ export class tgEpgDataService
 			}
         // ###############################
         // ###############################
-		that.channels["todolist"]=_cleanTodolist()
-		console.log("dataworker", "that.channels", that.channels)
-        if (data.config && this._getType(data.config, "hash"))
-			{
-        	this.basicConfig = this._extender(this.basicConfig, data.config);
-        	}
-		var now = Math.floor(new Date() / 1000);
-		var filter=	{
-					now: now,
-					tolerance: 		parseInt(that.basicConfig.viewAllowedOversize),
-					past : 	now - 	parseInt(that.basicConfig.pastTimeSec),
-					future: now + 	parseInt(that.basicConfig.previewAll)
-					}	
 
-		this._debug("data: basicConfig", this.basicConfig)
-		var keys = Object.keys(that.channels.data||{});
-        keys.forEach(function (k, i)
-			{
-			let c=that.channels.data[k]	
-			c["todolist"]=_cleanTodolist()
-			if (_isBlacklisted([c.name, c.channelID, c.sourceID ]))
-				{
-				_addTodolist(that.channels, "delete", c.id )
-				delete that.channels.data[k]
-				return
-				}
-
-			_cleanChannel(that.channels.data[k], filter)	
-
-			})
-        var keys = Object.keys(data);
-        keys.forEach(function (k, i) // alle channels
-            {
-            let sourceChannel = that._getType(data[k], "jsonstring") ? that._JSONcorrector(data[k]) : "";
-            if ( that._getType(sourceChannel, "hash") && sourceChannel.channeldata && sourceChannel.epg && that.basicConfig.source ) // valid channel
-                {
-				//console.log("dataworker", "sourceChannel", sourceChannel)
-				var channel=_createChannelItem(that.channels, sourceChannel, that.basicConfig.source, that.channelTmpl , filter )
-				if (!channel)
-					{
-					return;	
-					}
-				let keys = Object.keys(channel.tmp);
-                for (let key of keys)
-                    {
-					if (channel.data[key])
-						{
-						delete channel.data[key]	
-						}
-					else
-						{
-						_addTodolist(channel, "add", key)	
-						}	
-					}
-				keys = Object.keys(channel.data);
-				for (let key of keys)
-					{
-					_addTodolist(channel, "delete", key)	
-					}
-				channel.data=that._extender({},channel.tmp||{})
-
-				//console.log("dataworker", "channel", channel)
-	
-				keys = Object.keys(channel.data);
-				var lastItem=null
-                for (let key of keys.sort())
-                    {
-					var item=channel.data[key]
-                    //Aufräumen: abgelaufene Sendungen entfernen
-                    if (item.end > filter.past && item.start < filter.past-filter.tolerance)
-                        {
-						let d=item.end-(filter.past-filter.tolerance)	
-						item.html=item.html.replace(/span="\d+"/, `span="${d}"`)
-						item["changedStart"]=item.end-d
-						//item["tolerance"]=filter.tolerance/60
-						_addTodolist(channel, "update", key)	
-                        }
-                    if (item.start < filter.future && item.end > filter.future+filter.tolerance )
-                        {
-						//console.log("datetime!!", new Date(filter.future*1000).toLocaleString(), new Date(item.start*1000).toLocaleString(), new Date(item.end*1000).toLocaleString())	
-						let d=(filter.future+filter.tolerance)-item.start	
-						item.html=item.html.replace(/span="\d+"/, `span="${d}"`)
-						item["changedEnd"]=item.start+d
-						item["tolerance"]=new Date(filter.future*1000).toLocaleString()
-	
-						_addTodolist(channel, "update", key)	
-                        }
-					let diff= (lastItem)?item.start-lastItem.end:0	
-					if (diff > 0)
-						{
-						//create spaceitem
-						// eine Lücke
-						channel.data[lastItem.end.toString()]=	
-							{
-							key:		lastItem.end.toString(),
-							start:		lastItem.end,
-							duration:	diff,
-							end:		item.start,
-							html:		`<tgepg-progitem class="TabCell" span="${diff}" start="${lastItem.end}" end="${item.start}" channelid="${channel.channelID}" id="${channel.channelID}_${lastItem.end}"></tgepg-progitem>`
-							}
-						_addTodolist(channel, "add1", lastItem.end.toString() )							
-						}
-					else if (diff < 0)
-						{
-						//shorten items
-						if (diff < lastItem.duration)
-							{
-							lastItem.html=lastItem.html.replace(/span="\d+"/, `span="${lastItem.duration+diff}"`)
-							_addTodolist(channel, "replace", lastItem.key )
-							}
-						else
-							{
-							item.html=item.html.replace(/span="/, `epgerror="time mismatch" span="`)
-							_addTodolist(channel, "add2", item.key )
-							}						
-						}
-					else
-						{
-						_addTodolist(channel, "add3", item.key )
-						}	
-                    }
-				if (that.me)
-					{
-					let result={todolist: {}, data:{}}
-					result.data[channel.id]=that._extender({}, channel)
-					delete result.data[channel.id].epg	
-					that.sendDataBack(result)	
-					}
-				}
-
-            });
-		console.log("dataworker", "that.channels 2", that.channels)
-
-		let min=null, max=null
-		for ( let chankey in that.channels.data)
-			{
-			let channel=that.channels.data[chankey]
-			let indexes=Object.keys(channel.data)
-			if (indexes.length>0)
-				{
-				indexes=indexes.sort()
-				let start=(channel.data[indexes[0]].changedStart || channel.data[indexes[0]].start)
-				//console.log("changedStart" , channel.name, channel.data[indexes[0]].changedStart, channel.data[indexes[0]].start, start)
-				let end=(channel.data[indexes[indexes.length - 1]].changedEnd || channel.data[indexes[indexes.length - 1]].end)
-				min=(min===null || min > start )?start:min
-				max=(max===null || max < end   )?end:max
-				}
-			}
-		let dt=new Date(min*1000)
-		min=Math.floor(new Date(`${this._get2digit(dt.getFullYear(),4)}-${this._get2digit(dt.getMonth()+1,2)}-${this._get2digit(dt.getDate(),2)}T${this._get2digit(dt.getHours()+1,2)}:00:00`)/1000)
-		dt=new Date(max*1000)
-		max=Math.floor(new Date(`${this._get2digit(dt.getFullYear(),4)}-${this._get2digit(dt.getMonth()+1,2)}-${this._get2digit(dt.getDate(),2)}T${this._get2digit(dt.getHours()+1,2)}:00:00`)/1000)
-			
-		let result={todolist:{}, data:{}}	
-		for ( let chankey in that.channels.data)
-			{
-			let channel=that.channels.data[chankey]
-			let indexes=Object.keys(channel.data)
-			if (indexes.length>0)
-				{
-				indexes=indexes.sort()
-				result.data[chankey]=(!this.me)?this._extender({},that.channels.data[chankey]):{}
-				result.data[chankey]["data"]={}
-				result.data[chankey]["id"]=channel.id
-	
-				if (min && max)
-					{
-					let start=(channel.data[indexes[0]].changedStart || channel.data[indexes[0]].start)
-					let end=(channel.data[indexes[indexes.length - 1]].changedEnd || channel.data[indexes[indexes.length - 1]].end)
-					//let xend=channel.data[indexes[0]].end
-					//let xstart=channel.data[indexes[indexes.length - 1]].start
-					//let msg1=`${new Date(start * 1000).toLocaleString()} - ${new Date(xend * 1000).toLocaleString()}`
-					//let msg1=`${new Date(xstart * 1000).toLocaleString()} - ${new Date(end * 1000).toLocaleString()}|`
-					//let msg2=`${(channel.data[indexes[0]].tolerance)?channel.data[indexes[0]].tolerance:""}|`
-					
-
-					result.data[chankey]["preSpan"]=start-min
-					result.data[chankey]["postSpan"]=max-end
-					//console.log("datetime",  msg1 , msg2, result.data[chankey]["postSpan"], max, end, channel.name, channel.data[indexes[indexes.length - 1]].changedEnd,channel.data[indexes[indexes.length - 1]].end)	
-
-					_addTodolist(result.data[chankey], "manage", chankey)
-					}
-				delete result.data[chankey].epg	
-				}
-			else
-				{
-				_addTodolist(result, "delete", chankey)
-				delete that.channels.data[chankey]
-				}
-			}
-		//result["config"]={now:now,min:min,max:max}	
-		_addTodolist(result, "manage", {now:now,min:min,max:max})	
-		if (that.me)
-			{
-			that._debug("dataworker send WorkerData", result)
-			that.sendDataBack(result)	
-			}
-		else
-			{
-			//that._debug("send WorkerData manager", result)		
-			return result	
-			}	
-        }
+		}
 	//######################################################################################################################################
 	//
 	//

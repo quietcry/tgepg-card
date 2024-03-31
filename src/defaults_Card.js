@@ -119,6 +119,7 @@ export class tgEpgCardDefaults extends tgEpgDefaultsCommon
 				background-color: lightgray;
 				white-space: nowrap;
 				overflow: hidden;
+				height: var( --topBarHeight )
 				}
 			[name="superbutton"]
 				{
@@ -126,6 +127,7 @@ export class tgEpgCardDefaults extends tgEpgDefaultsCommon
 				}
 			[name="epgOutBox"]
 				{
+				position:relative;	
 				background-color: pink;
 				width:100%;
 				height:100%;

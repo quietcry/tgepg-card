@@ -9,9 +9,6 @@
 import { channelProgListBasis } from './channelProgList.basis.js';
 import { tgEpgProgListDefaults } from "../../defaults_Proglist.js";
 
-import './tgEpg.tooltipp.js';
-
-
 export class tgEpgProgList extends channelProgListBasis
 	{
 	constructor(mode="open", props={})
@@ -98,7 +95,7 @@ export class tgEpgProgList extends channelProgListBasis
 		var that=this
 		var id="progline_"
 		var row=null
-		//console.debug("man", channel)
+		//console.log("man", channel)
 		if (this.isValidChannel(channel, {data:"hash", id:"string"}) )
 			{
 			//console.debug("man valid", channel)
@@ -115,34 +112,36 @@ export class tgEpgProgList extends channelProgListBasis
 											<div class="TabCell">
 												<div class="Tab Progline">
 													<div name="container" class="TabRow">
-														<tgepg-progitem class="TabCell" span="0" name="startplaceholder">ol8izu		</tgepg-progitem>
-														<tgepg-progitem class="TabCell" span="0" name="endplaceholder">dafgfd		</tgepg-progitem>
+														<tgepg-progitem class="TabCell" span="" name="startplaceholder"></tgepg-progitem>
+														${channel.html}
+														<tgepg-progitem class="TabCell" span="" name="endplaceholder"></tgepg-progitem>
 													</div>
 												</div>
 											</div>
 										</div>
 										`)
 				this.app.appendChild(row);
+				channel["isNew"]=true
 				}
-
 			row=row.querySelector('[name="container"]')
 			if (!row) return
 
 			var firstitem= row.querySelector(`[name="startplaceholder"]`)
 			var lasttitem= row.querySelector(`[name="endplaceholder"]`)
-			if (channel.preSpan && firstitem)
+
+			if (("preSpan" in channel) && firstitem)
 				{
 				firstitem.setAttribute("span", channel.preSpan)
 				}
-			if (channel.postSpan && lasttitem)
+			if (("postSpan" in channel) && lasttitem)
 				{
 				lasttitem.setAttribute("span", channel.postSpan)
 				}
 
-			if (channel.todolist)
+			if (channel.todolist && ! channel.isNew)
 				{
 				let keys=Object.keys(channel.todolist)
-				//console.debug("proglist todo", keys)	
+				console.log("proglist todo", keys)	
 				for (let key of keys)
 					{
 					if (key.startsWith("d"))
@@ -257,12 +256,14 @@ export class tgEpgProgList extends channelProgListBasis
 	//######################################################################################################################################
 	static get properties()
 		{
+		let defProps=	tgEpgProgListDefaults.properties || {};
 		let props= 	{
 					timelinestart:null,
-					enableTimemarker:false
+					enableTimemarker:false,
+					enableToolTipp:false
 					};
 		let superProps=super.properties||{};
-		props=Object.assign(superProps,props);
+		props=Object.assign(superProps,defProps,props);
 		return props;
 		}
 	//######################################################################################################################################
@@ -292,7 +293,11 @@ export class tgEpgProgList extends channelProgListBasis
 				this.initTimemarker()	
 				break;
 			case "enableTimemarker":
+				//console.log("enableTimemarker!", newVal)
 				this.initTimemarker()	
+				break;
+			case "enableToolTipp":
+				console.log("enableToolTipp!", newVal)
 				break;
 			default:
 				break;
@@ -507,12 +512,21 @@ export class tgEpgProgList extends channelProgListBasis
 	// 		this.PROPS.run["now"]=val;
 	// 		}
 	// 	}
-	get enableTimemarker()
+	get enableToolTipp()
+		{	
+		return this.PROPS.attr.enableToolTipp||null;
+		}
+	set enableToolTipp(val)
 		{
+		this.attributeChangedCallback("enableToolTipp", this.PROPS.attr.enableToolTipp||null, val)
+		}
+	get enableTimemarker()
+		{	
 		return this.PROPS.attr.enableTimemarker||null;
 		}
 	set enableTimemarker(val)
 		{
+		//console.log("enableTimemarker", val)	
 		this.attributeChangedCallback("enableTimemarker", this.PROPS.attr.enableTimemarker||null, val)
 		}
 	get timelinestart()
@@ -571,119 +585,119 @@ export class tgEpgProgList extends channelProgListBasis
 
 
 
-	render()
-		{
-		var that=this
-		let selector='.TabRow[filter] [name="container"]';
-		var rows=this.app.querySelectorAll(`${selector}`)
-		const styles=getComputedStyle(this)
-		this.PROPS.run["scale"]=parseFloat(styles.getPropertyValue('--scale'))||0
+	// render()
+	// 	{
+	// 	var that=this
+	// 	let selector='.TabRow[filter] [name="container"]';
+	// 	var rows=this.app.querySelectorAll(`${selector}`)
+	// 	const styles=getComputedStyle(this)
+	// 	this.PROPS.run["scale"]=parseFloat(styles.getPropertyValue('--scale'))||0
 
-		rows.forEach(function(row)
-			{
-			var cells=row.querySelectorAll('tg-epg-progitem[usedfor="emptyStartCell"],tg-epg-progitem[usedfor="emptyEndCell"]')
-			cells.forEach(function(cell)
-				{
-				cell.remove()
-				})
-			})
-		selector=`${selector} > tg-epg-progitem`
-		this.PROPS.run["timeFrameStart"]=getMinMaxTime	("min",
-														this.PROPS.run.now -this.PROPS.run.epgPastSpanHours*3600,
-														`${selector}:first-of-type`
-														)
-		this.PROPS.run["timeFrameEnd"]	=getMinMaxTime	("max",
-														this.PROPS.run.now + (this.PROPS.run.epgFutureSpanHours+this.PROPS.run.epgFutureSpanHoursAll)*3600,
-														`${selector}:last-of-type`
-														)
-		rows.forEach(function(row)
-			{
-			var firstCell=row.querySelector('tg-epg-progitem:not([usedfor]):first-of-type')
-			while ((firstCell) && (parseInt(firstCell.getAttribute("end")) < that.PROPS.run.timeFrameStart))
-				{
-				firstCell.remove()
-				firstCell=row.querySelector('tg-epg-progitem:not([usedfor]):first-of-type')
-				}
+	// 	rows.forEach(function(row)
+	// 		{
+	// 		var cells=row.querySelectorAll('tg-epg-progitem[usedfor="emptyStartCell"],tg-epg-progitem[usedfor="emptyEndCell"]')
+	// 		cells.forEach(function(cell)
+	// 			{
+	// 			cell.remove()
+	// 			})
+	// 		})
+	// 	selector=`${selector} > tg-epg-progitem`
+	// 	this.PROPS.run["timeFrameStart"]=getMinMaxTime	("min",
+	// 													this.PROPS.run.now -this.PROPS.run.epgPastSpanHours*3600,
+	// 													`${selector}:first-of-type`
+	// 													)
+	// 	this.PROPS.run["timeFrameEnd"]	=getMinMaxTime	("max",
+	// 													this.PROPS.run.now + (this.PROPS.run.epgFutureSpanHours+this.PROPS.run.epgFutureSpanHoursAll)*3600,
+	// 													`${selector}:last-of-type`
+	// 													)
+	// 	rows.forEach(function(row)
+	// 		{
+	// 		var firstCell=row.querySelector('tg-epg-progitem:not([usedfor]):first-of-type')
+	// 		while ((firstCell) && (parseInt(firstCell.getAttribute("end")) < that.PROPS.run.timeFrameStart))
+	// 			{
+	// 			firstCell.remove()
+	// 			firstCell=row.querySelector('tg-epg-progitem:not([usedfor]):first-of-type')
+	// 			}
 
-			var lastCell=row.querySelector('tg-epg-progitem:not([usedfor]):last-of-type')
-			while ((lastCell) && (parseInt(lastCell.getAttribute("start")) > that.PROPS.run.timeFrameEnd))
-				{
-				lastCell.remove()
-				lastCell=row.querySelector('tg-epg-progitem:not([usedfor]):last-of-type')
-				}
-			firstCell=row.querySelector('tg-epg-progitem:not([usedfor]):first-of-type')
-			lastCell=row.querySelector('tg-epg-progitem:not([usedfor]):last-of-type')
-			if (firstCell)
-				{
-				firstCell.setAttribute("span", parseInt(firstCell.getAttribute("duration")) )
-				lastCell.setAttribute("span", parseInt(lastCell.getAttribute("duration")) )
+	// 		var lastCell=row.querySelector('tg-epg-progitem:not([usedfor]):last-of-type')
+	// 		while ((lastCell) && (parseInt(lastCell.getAttribute("start")) > that.PROPS.run.timeFrameEnd))
+	// 			{
+	// 			lastCell.remove()
+	// 			lastCell=row.querySelector('tg-epg-progitem:not([usedfor]):last-of-type')
+	// 			}
+	// 		firstCell=row.querySelector('tg-epg-progitem:not([usedfor]):first-of-type')
+	// 		lastCell=row.querySelector('tg-epg-progitem:not([usedfor]):last-of-type')
+	// 		if (firstCell)
+	// 			{
+	// 			firstCell.setAttribute("span", parseInt(firstCell.getAttribute("duration")) )
+	// 			lastCell.setAttribute("span", parseInt(lastCell.getAttribute("duration")) )
 
-				let x=parseInt(firstCell.getAttribute("start"))
-				let y=that.PROPS.run.timeFrameStart-x
-				if (y>=0)
-					{
-					firstCell.setAttribute("span", parseInt(firstCell.getAttribute("span")-y) )
-					y=0
-					}
-				else
-					{
-					y=-1*y
-					}
-				row.prepend(that.htmlToElement	(
-					`
-					<tg-epg-progitem usedfor="emptyStartCell" class="usedfor" span="${y}">
-					</tg-epg-progitem>
-					`))
-				x=parseInt(lastCell.getAttribute("end"))
-				y=x-that.PROPS.run.timeFrameEnd
-				if (y>=0)
-					{
-					lastCell.setAttribute("span", parseInt(firstCell.getAttribute("span")-y) )
-					y=0
-					}
-				else
-					{
-					y=-1*y
-					}
-			// 	////console.debug("proglistrender", y, new Date(that.PROPS.run.timeFrameStart*1000), new Date(that.PROPS.run.timeFrameEnd*1000))
+	// 			let x=parseInt(firstCell.getAttribute("start"))
+	// 			let y=that.PROPS.run.timeFrameStart-x
+	// 			if (y>=0)
+	// 				{
+	// 				firstCell.setAttribute("span", parseInt(firstCell.getAttribute("span")-y) )
+	// 				y=0
+	// 				}
+	// 			else
+	// 				{
+	// 				y=-1*y
+	// 				}
+	// 			row.prepend(that.htmlToElement	(
+	// 				`
+	// 				<tg-epg-progitem usedfor="emptyStartCell" class="usedfor" span="${y}">
+	// 				</tg-epg-progitem>
+	// 				`))
+	// 			x=parseInt(lastCell.getAttribute("end"))
+	// 			y=x-that.PROPS.run.timeFrameEnd
+	// 			if (y>=0)
+	// 				{
+	// 				lastCell.setAttribute("span", parseInt(firstCell.getAttribute("span")-y) )
+	// 				y=0
+	// 				}
+	// 			else
+	// 				{
+	// 				y=-1*y
+	// 				}
+	// 		// 	////console.debug("proglistrender", y, new Date(that.PROPS.run.timeFrameStart*1000), new Date(that.PROPS.run.timeFrameEnd*1000))
 
-				row.append(that.htmlToElement	(
-					`
-					<tg-epg-progitem usedfor="emptyEndCell"  class="usedfor" span="${y}">
-					</tg-epg-progitem>
-					`
-					))
-				}
-			})
-		this.initTimemarker()
+	// 			row.append(that.htmlToElement	(
+	// 				`
+	// 				<tg-epg-progitem usedfor="emptyEndCell"  class="usedfor" span="${y}">
+	// 				</tg-epg-progitem>
+	// 				`
+	// 				))
+	// 			}
+	// 		})
+	// 	this.initTimemarker()
 
-		function getMinMaxTime(minOrMax="min", border, selector)
-			{
-			var cells=that.app.querySelectorAll(selector)
-			// //console.debug("proglistrenderxxx", that.app, minOrMax, cells.length)
+	// 	function getMinMaxTime(minOrMax="min", border, selector)
+	// 		{
+	// 		var cells=that.app.querySelectorAll(selector)
+	// 		// //console.debug("proglistrenderxxx", that.app, minOrMax, cells.length)
 
-			var pos=null
-			cells.forEach(function(cell)
-				{
-				if (minOrMax === "min")
-					{
-					let x=parseInt(cell.getAttribute("start"))
-					pos=( (pos === null) || (pos > x))?x:pos
-					pos=(pos<border)?border:pos
-					}
-				else
-					{
-					let x=parseInt(cell.getAttribute("end"))
-					pos=( (pos === null) || (pos < x))?x:pos
-					pos=(pos > border)?border:pos
-					// //console.debug("proglistrenderx", new Date(border*1000), new Date(pos*1000))
+	// 		var pos=null
+	// 		cells.forEach(function(cell)
+	// 			{
+	// 			if (minOrMax === "min")
+	// 				{
+	// 				let x=parseInt(cell.getAttribute("start"))
+	// 				pos=( (pos === null) || (pos > x))?x:pos
+	// 				pos=(pos<border)?border:pos
+	// 				}
+	// 			else
+	// 				{
+	// 				let x=parseInt(cell.getAttribute("end"))
+	// 				pos=( (pos === null) || (pos < x))?x:pos
+	// 				pos=(pos > border)?border:pos
+	// 				// //console.debug("proglistrenderx", new Date(border*1000), new Date(pos*1000))
 
-					}
-				})
-			return Math.round(new Date(((pos === null)?border:pos)*1000).floorHours().getTime()/1000)
-			}
+	// 				}
+	// 			})
+	// 		return Math.round(new Date(((pos === null)?border:pos)*1000).floorHours().getTime()/1000)
+	// 		}
 
-		}
+	// 	}
 	// addEmptyCellsOnStartAndEnd(row, start, end)
 	// 	{
 	// 	var sCell=row.querySelector('tg-epg-progitem[usedfor="emptyStartCell"]')

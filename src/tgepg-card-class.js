@@ -2,7 +2,7 @@
 import { tgControls } from "./lib/tgControls.js";
 import { tgEpgCardDefaults } from "./defaults_Card.js"
 import { tgEpgDataService } from "./tgepg-dataWorker.js"
-import { tgControlsHelperBasic } from "./lib/tgControls.helper_basic.js";
+//import { tgControlsHelperBasic } from "./lib/tgControls.helper_basic.js";
 
 import './lib/epgElements/tgEpg.timebar.js';
 import './lib/epgElements/tgEpg.channelList.js';
@@ -11,6 +11,8 @@ import './lib/epgElements/tgEpg.progList.js';
 import './lib/epgElements/tgEpg.progItem.js';
 //import './lib/tgControls.FloatingMenu.js';
 import './lib/tgControls.Scrollbar.js';
+import './lib/epgElements/tgEpg.tooltipp.js';
+
 
 export class tgEpgCard extends tgControls
 	{
@@ -34,6 +36,8 @@ export class tgEpgCard extends tgControls
 	_enable_channelList=true
 	_enable_progList=true
 	_enable_timemarker=true
+	_enable_tooltipp=true
+	_enable_epgInfo=true
 	_dataLoopsAllowed=-1
 	// lifecycle
 	constructor(mode="open")
@@ -42,18 +46,15 @@ export class tgEpgCard extends tgControls
 		var now= new Date()
 		this._info("under construction ;-)", now)
 		var that=this
+		this.detectENV()
+
 		if (this._enable_DataWorker)
 			{
 			function startworker () 
 				{
 				var workerstringified=""
 				workerstringified=workerstringified+"; "+ tgEpgDataService.toString()
-				//workerstringified=workerstringified+"; "+workerRunner.toString().replace(/^function .+[\n\s\t]*\{/g, '').replace(/\}$/g, '') 
 				workerstringified=workerstringified+"; "+workerRunnerAsString() 
-				//var test=new  tgEpgDataService()
-				//console.log("worker", Object.getPrototypeOf(test).constructor.name)
-				//console.log("worker", workerstringified)
-
 				var workerBlob = new Blob( [workerstringified], { type:'text/javascript' } );
 				var workerBlobUrl = URL.createObjectURL(workerBlob);
 				that.dataWorker = new Worker(workerBlobUrl);
@@ -101,32 +102,6 @@ export class tgEpgCard extends tgControls
 			{
 			that.refresh(event.type)	
 			}
-	
-		// if (this.workerSource)
-		// 	{
-		// 	let workerBlob = new Blob([this.workerSource.text], { type: "application/javascript" });
-		// 	let workerUrl = URL.createObjectURL(workerBlob);
-		// 	let worker = new Worker(workerUrl);
-		// 	URL.revokeObjectURL(workerUrl)
-		// 	console.log("wörker", worker)
-		 
-		// 		worker.addEventListener("message", function(messageEvent) {
-		// 				   console.warn("Der Wörker sagt: " + messageEvent.data);
-		// 				});	
-		
-		// 	}	
-		
-		//["connected"].forEach(evname => my.addEventListener( evname, function(event){alert("event")}))
-
-
-		// this.dataWorker = new Worker("tgepg-dataWorker.js", {type: 'module'});
-		// this.dataWorker.addEventListener("message", function(messageEvent)
-		// 	{
-		// 	var ev = new CustomEvent('message', { detail: messageEvent?.data });
-		// 	console.debug("received from worker", ev )
-		// 	})
-		//this.doQueryElements();
-		//this.doListen();
 		this.connected()
 		}
 
@@ -139,7 +114,7 @@ export class tgEpgCard extends tgControls
 		let constructed=this.PROPS.run?.states?.constructed||false
 		let profiled=this.PROPS.run?.states?.profiled||false
 		if (!profiled || !connected || !this.app) return
-		this.PROPS.run["currentProfile"]=this._extender({}, this.setCurrentProfile(this.PROPS.run), {scale:1})
+		this.PROPS.run["currentProfile"]=this._extender({}, this.setCurrentProfile(this.PROPS.run))
 
 		if (!constructed)
 			{
@@ -156,10 +131,10 @@ export class tgEpgCard extends tgControls
 				}	
 			}	
 		this.calculate()
+		this.refreshAppSizeAfterResizeOrInit()
 		this.updateScrollbars("horizontal" );
 
 			
-		this.refreshAppSizeAfterResizeOrInit()
 	
 		}
 	calculate()
@@ -178,9 +153,9 @@ export class tgEpgCard extends tgControls
 			run["scrollOffset"]=(run.scrollOffsetAbsolute && run.scrollOffsetAbsolute < run.now-run.currentProfile.design.setOfSpan)?
 			run.scrollOffsetAbsolute-run.min:run.now-run.min-run.currentProfile.design.setOfSpan	
 			run["scrollOffsetAbsolute"]=run.min+run["scrollOffset"]
-			let min= new Date(run.min*1000).toLocaleDateString("de-DE")	+ new Date(run.min*1000).toLocaleTimeString("de-DE")
-			let max= new Date(run.max*1000).toLocaleDateString("de-DE")	+ new Date(run.max*1000).toLocaleTimeString("de-DE")
-			console.log("run", min, max, run.currentProfile.design.setOfSpan)
+			//let min= new Date(run.min*1000).toLocaleDateString("de-DE")	+ new Date(run.min*1000).toLocaleTimeString("de-DE")
+			//let max= new Date(run.max*1000).toLocaleDateString("de-DE")	+ new Date(run.max*1000).toLocaleTimeString("de-DE")
+			//console.log("run", min, max, run.currentProfile.design.setOfSpan)
 			}
 
 		}
@@ -319,21 +294,17 @@ export class tgEpgCard extends tgControls
 		//console.info("rendering", this.channelListApp, this.progListApp)
 		if (data.todolist)
 			{
-			let keys=Object.keys(data.todolist)
+			let keys=Object.keys(data.todolist).filter((key) => key.startsWith("d")).sort()
 			for (let key of keys)
 				{
-				if (key.startsWith("d"))
+				for ( let index of data.todolist[key])
 					{
-					for ( let index of data.todolist[key])
-						{
-						if (this.channelListApp) this.channelListApp.deleteChannel=index
-						if (this.progListApp)    this.progListApp.deleteChannel=index
-						}
+					if (this.channelListApp) this.channelListApp.deleteChannel=index
+					if (this.progListApp)    this.progListApp.deleteChannel=index
 					}
 				}
 			}
 		let keys=Object.keys(data.data)
-		//if(keys.length>1) console.clear()
 
 		for (let key of keys)
 			{
@@ -345,23 +316,26 @@ export class tgEpgCard extends tgControls
 			}
 		if (data.todolist)
 			{
-			let keys=Object.keys(data.todolist)
+			let keys=Object.keys(data.todolist).filter((key) => key.startsWith("m")).sort()
 			let refresh=false
-			//console.log("proglist run todo", data.todolist)
 			for (let key of keys)
 				{
-				if (key.startsWith("m"))
+				let indexes=Object.keys(data.data)	
+				for ( let index of data.todolist[key])
 					{
-					for ( let config of data.todolist[key])
-						{
-						if (this._getType(config, "hash"))
-							{
-							refresh=true
-							this.PROPS.run=this._extender(this.PROPS.run, config)
-							console.log("config", config)
-							}	
-						}
-					}
+					if (this.progListApp)    this.progListApp.setChannel=data.data[index]
+					}					
+				}
+			keys=Object.keys(data.todolist).filter((key) => key.startsWith("c")).sort()
+
+			for (let key of keys)
+				{
+				let config=	data.todolist[key][0]||false
+				if (this._getType(config, "hash"))
+					{
+					refresh=true
+					this.PROPS.run=this._extender(this.PROPS.run, config)
+					}	
 				}
 			if (refresh)
 				{
@@ -387,11 +361,12 @@ export class tgEpgCard extends tgControls
 			this.superButton 	= this.app.querySelector('[name="superbutton"]');
 			this.channelBox 	= this.app.querySelector('[name="channelBox"]');
 			this.programBox 	= this.app.querySelector('[name="programBox"]');
+			this.epgOuterBox 	= this.app.querySelector('[name="epgOutBox"]');
 			this.scrollbarX		= this._shadowRoot.querySelector('.tgcontrolscrollbarx');;
 			this.scrollbarY 	= null;
 			this.floatingMenu 	= this._shadowRoot.querySelector('tg-floatingMenu');
 			this.workerSource 	= this._shadowRoot.querySelector('[name="worker"]');
-
+			this.epgTooltipp	= null
 			}
 		//console.debug("query", this.channelBox || "none")
 		// this.buttonCell = this.shadowRoot.querySelector('[name="buttonCell"]');
@@ -418,7 +393,14 @@ export class tgEpgCard extends tgControls
 			
 		
 		}	
-		
+	manageEPGInfoEvent(event)
+		{
+		let details=event.detail
+		if (this.epgTooltipp && this._enable_tooltipp)
+			{
+			this.epgTooltipp.data=event.detail	
+			}
+		}		
 	//######################################################################################################################################
 	//init()
 	//prüft die Umgebung und passt Parameter entsprechend an
@@ -428,13 +410,13 @@ export class tgEpgCard extends tgControls
 		{
 		let that=this;
 		let test;
-		this.detectENV()
 		if (this._enable_TimeBar) 		activateTimeBar.call(this);
 		if (this._enable_FloatingMnu) 	activateFloatingMenu.call(this);
 		if (this._enable_Scrollbar) 	activateScrollbars.call(this)
 		if (this._enable_channelList)	activateChannellist.call(this)
 		if (this._enable_progList)		activateProglist.call(this)
-		if (this._enable_timemarker)    this.progListApp.enableTimemarker = this._enable_timemarker
+		if (this._enable_timemarker)    activateTimemarker.call(this)
+		if (this._enable_tooltipp || this._enable_epgInfo)    	activateToolTipp.call(this)
 
 
 		let viewport=document.documentElement;
@@ -443,8 +425,30 @@ export class tgEpgCard extends tgControls
 
 		this.PROPS.run["states"]["constructed"]=true
 		return;
-		
-		
+				
+		function activateToolTipp()
+			{
+			this.progListApp.enableToolTipp = this._enable_tooltipp
+			this.epgTooltipp=this.epgOuterBox.querySelector('tgepg-tooltipp');
+			if (! this.epgTooltipp)
+				{
+				this.epgTooltipp=document.createElement("tgepg-tooltipp");
+				this.epgTooltipp.classList.add("hide");
+				this.epgTooltipp.setAttribute("name","tgEpgTooltipp");
+				this.epgOuterBox.appendChild(this.epgTooltipp);
+				this.epgTooltipp.master=this.epgOuterBox
+				this.epgTooltipp.restrictions={left:this.channelBox.getBoundingClientRect().width}
+				}
+	
+			if (this._enable_tooltipp || this._enable_epgInfo)
+				{
+				this.epgOuterBox.addEventListener("userInteraction", function(ev){that.manageEPGInfoEvent.call(that,ev)}, false);	
+				}
+			}
+		function activateTimemarker()
+			{
+			this.progListApp.enableTimemarker = this._enable_timemarker
+			}
 		function activateChannellist()
 			{
 			this.channelListApp=this.channelBox.querySelector('tgepg-channellist');
@@ -464,7 +468,7 @@ export class tgEpgCard extends tgControls
 				this.progListApp.classList.add("tgEpgProgList", "greedyH");
 				this.progListApp.setAttribute("name","tgEpgProgList");
 				//console.debug("renderer", this.PROPS.run)
-				this.progListApp.scale=this.PROPS.run.currentProfile.scale||1;
+				//this.progListApp.scale=this.PROPS.run.currentProfile.scale||1;
 				this.progListApp.supermaster=this
 				this.programBox.appendChild(this.progListApp);
 				this.dependedApps.push({app:this.progListApp});
@@ -527,7 +531,15 @@ export class tgEpgCard extends tgControls
 			{
 			this.progListApp.timelinestart= parseInt(this.PROPS.run.min)
 			//this.progListApp.scale= parseFloat(profile.scale);
-			console.log("progListApp attributeChangedCallback", this.progListApp)	
+			//console.log("progListApp attributeChangedCallback", this.progListApp)	
+			}
+		if (this.timeBarApp && this.PROPS.run.min)
+			{
+			//console.log("profile", this.PROPS.run)	
+			this.timeBarApp.timelinestart= parseInt(this.PROPS.run.min)
+			this.timeBarApp.timelineend= parseInt(this.PROPS.run.max)
+			//this.progListApp.scale= parseFloat(profile.scale);
+			//console.log("progListApp attributeChangedCallback", this.progListApp)	
 			}
 		//this.renderSubApp()
 		//this._debug("refreshAppSizeAfterResizeOrInit")
@@ -760,7 +772,8 @@ export class tgEpgCard extends tgControls
 		// 	console.info("sendDataToWorker", "no updates")	
 		// 	return	
 		// 	}
-		let configs=this._extender({},this.PROPS.run.currentProfile.dataWorker||{})
+		let master=(this.epgOuterBox)?`[name=\"${this.epgOuterBox.getAttribute("name")}\"]`:false
+		let configs=this._extender({},this.PROPS.run.currentProfile.dataWorker||{}, {adds:this._extender({enableToolTipp:this._enable_tooltipp, master: master}, this.PROPS.run.ENV)})
 		let ents=[...this.PROPS.run.doUpdateEnts||[]]
 		for (let ent of ents)
 			{

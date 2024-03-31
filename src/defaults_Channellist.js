@@ -14,7 +14,7 @@ export class tgEpgChannelListDefaults extends tgEpgDefaultsCommon
 
 									}),
 						}
-		console.log("tgEpgChannelListDefaults", "constructed")				
+		//console.log("tgEpgChannelListDefaults", "constructed")				
 		}
 	
 	get properties()
@@ -26,7 +26,7 @@ export class tgEpgChannelListDefaults extends tgEpgDefaultsCommon
 
 	static get template()
 		{
-		console.log("tgEpgChannelListDefaults", "template")				
+		//console.log("tgEpgChannelListDefaults", "template")				
 	
 		var styles=super.styles||"";
 		styles=styles+  `

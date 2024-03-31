@@ -30,8 +30,9 @@ export class tgEpgTimebarDefaults extends tgEpgDefaultsCommon
 						:host
 							{
 							--timeBarBorder: 1px solid black;
+							--timeBarCellHeight: calc( var( --topBarHeight, 24px ) / 5 );
 							display:inline-block;
-							height:calc( var(--timeBarCellHeight) * 4) !important;
+							height:var( --topBarHeight )  !important;
 							}
 						[name="app"]
 							{
@@ -39,6 +40,7 @@ export class tgEpgTimebarDefaults extends tgEpgDefaultsCommon
 							background-color: gray;
 							display:inline-block;
 							position:relative;
+							height:100%;
 							}
 						[name="digitline"]
 							{
@@ -95,27 +97,56 @@ export class tgEpgTimebarDefaults extends tgEpgDefaultsCommon
 							{
 							height:calc( var(--timeBarCellHeight) * 4) !important;
 							}
-						[name="hourcell"]
-							{
-							width:calc( var(--timeBarCellWidth) * 4) !important;
-							min-width: calc( var(--timeBarCellWidth) * 4 );
-							max-width: calc( var(--timeBarCellWidth) * 4 );
-							}
 						[name="hourcell"] .Tab > .TabRow > .TabCell
 							{
 							vertical-align:top;
-							}
-						[name="barlinecell"]
-							{
-							width:calc( var(--timeBarCellWidth) * 1) !important;
-							min-width: calc( var(--timeBarCellWidth) * 1 );
-							max-width: calc( var(--timeBarCellWidth) * 1 );
 							}
 						[name="hourcell"] .greedyH > .TabRow:last-child > .TabCell
 							{
 							border-left: var(--timeBarBorder);
 							}
-
+						[name="barlinecell"]
+							{
+							border-left: var( --timeBarBorder , 1px solid black);
+							}				
+						.cellwidth1
+							{
+							width:		calc( var( --scale , 1 ) * 15 * 60 * 1px) !important;
+							min-width: 	calc( var( --scale , 1 ) * 15 * 60 * 1px) !important;
+							max-width: 	calc( var( --scale , 1 ) * 15 * 60 * 1px) !important;
+							}
+						.cellwidth2
+							{
+							width:		calc( var( --scale , 1 ) * 15 * 60 * 2px) !important;
+							min-width: 	calc( var( --scale , 1 ) * 15 * 60 * 2px) !important;
+							max-width: 	calc( var( --scale , 1 ) * 15 * 60 * 2px) !important;
+							}
+						.cellwidth4
+							{
+							width:		calc( var( --scale , 1 ) * 15 * 60 * 4px) !important;
+							min-width: 	calc( var( --scale , 1 ) * 15 * 60 * 4px) !important;
+							max-width: 	calc( var( --scale , 1 ) * 15 * 60 * 4px) !important;
+							}
+						[name="digitline"]:not(.free) .TabCell .TabCell
+							{
+							vertical-align: middle;
+							text-align:center;
+							font-size: min(calc( var(--timeBarLineHeight) * 2), 12px);
+							}
+						[name="digitline"].free
+							{
+							position:absolute;
+							left:0px;
+							top:0px;
+							min-height:15px;
+							}
+						[name="digitline"].free .TabCell
+							{
+							vertical-align: middle;
+							text-align:center;
+							font-size: clamp(10px , var(--timeBarLineHeight) , 20px);
+							}
+								
 						</style>
 
 						`

@@ -194,6 +194,20 @@ export class tgControlsHelperBasic
 		var args = Array.from(arguments); args.unshift("error"); this._message.apply(this, args)
 		}
 	//######################################################################################################################################
+	//######################################################################################################################################
+	_getMasterElement(node, query)
+		{
+		return master(node, query)	
+		function master(node, query)
+			{
+			let target=node.querySelector(query) 
+			if (target) return target
+			node=node.parentElement||node.getRootNode().host
+			return (node)? master(node, query):false
+			}	
+		}
+
+	//######################################################################################################################################
 	//
 	//
 	//
@@ -214,7 +228,7 @@ export class tgControlsHelperBasic
 			{
 			for(var key in arguments[i])
 				{
-				var isitArray=false;
+				//var isitArray=false;
 				arguments[0][key]=arguments[0][key]||{};
 				if (typeof arguments[i][key] === "function")
 					{
@@ -222,7 +236,7 @@ export class tgControlsHelperBasic
 					}
 				else if ( isObject(arguments[i][key]) )
 					{
-					arguments[0][key]=(Array.isArray(arguments[i][key]))? arguments[i][key]:this._extender(arguments[0][key],arguments[i][key]);
+					arguments[0][key]=(Array.isArray(arguments[i][key]))? [...arguments[i][key]]:this._extender(arguments[0][key],arguments[i][key]);
 					}
 				else if (Object.prototype.hasOwnProperty.call(arguments[i], key))
 					{

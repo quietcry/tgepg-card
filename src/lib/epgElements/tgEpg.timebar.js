@@ -14,7 +14,7 @@ export class tgEpgTimebar extends tgControls
 	{			
 	constructor(mode="open", props={})
 		{
-		super(mode, new tgEpgTimebarDefaults());
+		super(mode, new tgEpgTimebarDefaults(), props);
 		var that=this;
 		// default Parameter nach Props einlesen
 		this["PROPS"]=this._extender( 
@@ -23,7 +23,7 @@ export class tgEpgTimebar extends tgControls
 							{
 							default:	{
 										msg:	{
-												log:true,
+												log:false,
 												debug:true,
 												error:true
 												},
@@ -37,7 +37,7 @@ export class tgEpgTimebar extends tgControls
 							});
 
 		this.app = this.shadowRoot.querySelector('[name="app"]');
-		this._debug("constructor - constructed");
+		//this._log("constructor - constructed", this.app);
 
 		}
 	//######################################################################################################################################
@@ -47,13 +47,14 @@ export class tgEpgTimebar extends tgControls
 	//######################################################################################################################################
 	static get properties()
 		{
+		let defProps=	tgEpgTimebarDefaults.properties || {};
+		let superProps=super.properties||{};
 		let props= 	{
 					timelinestart:null,
 					timelineend:null,
 					enableTimemarker:false
 					};
-		let superProps=super.properties||{};
-		props=Object.assign(superProps,props);
+		props=Object.assign(superProps,defProps,props);
 		return props;
 		}
 	//######################################################################################################################################
@@ -71,7 +72,7 @@ export class tgEpgTimebar extends tgControls
 	connectedCallback ()
 		{
 		var that=this;
-		console.log(" timebatr connectedCallback", "start");
+		//console.log(" timebatr connectedCallback", "start");
 		if (this.PROPS.run.connected == 0)
 		 	{
 			this.render();
@@ -113,6 +114,30 @@ export class tgEpgTimebar extends tgControls
 	//
 	//
 	//######################################################################################################################################
+	get timelinestart()
+		{
+		return this.PROPS.run.timelinestart;
+		}
+	set timelinestart(val)
+		{
+		if (this.PROPS.run.timelinestart != val)
+			{
+			this.PROPS.run["timelinestart"]=val;
+			this.render()
+			}
+		}
+	get timelineend()
+		{
+		return this.PROPS.run.timelineend;
+		}
+	set timelineend(val)
+		{
+		if (this.PROPS.run.timelineend != val)
+			{
+			this.PROPS.run["timelineend"]=val;
+			this.render()
+			}
+		}
 	get supermaster()
 		{
 		return this.PROPS.run.supermaster;
@@ -127,13 +152,13 @@ export class tgEpgTimebar extends tgControls
 		}
 	set design_timeFrameStart(val)
 		{
-		console.info("transer", this.PROPS.run.timeFrameStart, val)
+		//console.info("transer", this.PROPS.run.timeFrameStart, val)
 
 		if (this.PROPS.run.timeFrameStart != val)
 			{
 			this.PROPS.run["timeFrameStart"]=val;
 			}
-			console.info("transer", this.PROPS.run.timeFrameStart, val)
+			//console.info("transer", this.PROPS.run.timeFrameStart, val)
 		}
 	get design_timeFrameEnd()
 		{
@@ -153,11 +178,11 @@ export class tgEpgTimebar extends tgControls
 	//######################################################################################################################################
 	render()
 		{
-			if  ( ( ! this.PROPS.run.timeFrameStart) || ( ! this.PROPS.run.timeFrameEnd) )
+		if  ( ( ! this.PROPS.run.timelinestart) || ( ! this.PROPS.run.timelineend) )
 			{
 			return
 			}
-		console.info("trans render", this.PROPS.run.timeFrameStart, this.PROPS.run.timeFrameEnd)
+		//console.log("trans render", this.PROPS.run.timelinestart, this.PROPS.run.timelineend)
 		//this.app.innerHTML=""
 		let that=this;
 		let test;
@@ -169,8 +194,8 @@ export class tgEpgTimebar extends tgControls
 			root = root.parentNode;
 			}
 		root= root.querySelector('[name="timeBar"]');
-		var cellHeight=	root.clientHeight||this.app.clientHeight || 50
-		cellHeight=cellHeight/5
+		// var cellHeight=	root.clientHeight||this.app.clientHeight || 50
+		// cellHeight=cellHeight/5
 		//let hours=(this.PROPS.run.previewEnd-this.PROPS.run.previewStart)/3600;
 		//this._debug("run", cellHeight, this.app, this.PROPS.run)
 		var hourCellContainer=this.app.querySelector('[name="hourCellContainer"]')
@@ -207,18 +232,57 @@ export class tgEpgTimebar extends tgControls
 
 		var hourCells=[...hourCellContainer.querySelectorAll('[name="hourcell"]')]
 		var textCells=[...textCellContainer.querySelectorAll('[name="digitcell"]')]
+		var index=1
+//this._log("hourCellContainer", hourCellContainer)
+		for (let i=this.PROPS.run.timelinestart+3600; i<=this.PROPS.run.timelineend;i+=3600)
+			{
+			//	this._log("loop", i)
+	
+			if (textCells.length >= index)
+				{
+			//	this._log("true", i)
+				textCells[index-1].innerHTML=getDigitString(i)
+				}
+			else
+				{
+			//	this._log("else", textCellContainer)
+	
+				let cell =getdigitcell(getDigitString(i))
+				textCells.push(cell)
+				textCellContainer.insertBefore(cell,textCellEmptyCell)
+				}
+			if (hourCells.length < index)
+				{
 
+				let cell =gethourcell()
+				hourCells.push(cell)
+				hourCellContainer.append(cell)
+				}
+			index+=1
+			}
+		while (textCells.length > index)
+			{
+			textCells.pop().remove()
+			}
+		while (hourCells.length > index)
+			{
+			hourCells.pop().remove()
+			}
+
+		return;
 		function getDigitString(x)
 			{
-			return that._get2digit(new Date(x*1000).getHours()+"")+":00"
+			let digit= that._get2digit(new Date(x*1000).getHours()+"")+":00"
+			//that._log("digit", digit)
+			return digit
 			}
 		function getdigitcell(x)
 			{
-			return that.htmlToElement(`<div  name="digitcell" class="TabCell cellwidth4">${x}</div>`)
+			return that._htmlToElement(`<div  name="digitcell" class="TabCell cellwidth4">${x}</div>`)
 			}
 		function gethourcell()
 			{
-			return that.htmlToElement	(`
+			return that._htmlToElement	(`
 										<div name="hourcell" class="TabCell cellwidth4">
 											<div class="Tab greedy">
 												<div class="TabRow" style="height:*%">
@@ -256,40 +320,7 @@ export class tgEpgTimebar extends tgControls
 										</div>
 										`)
 			}
-		var index=1
 
-		for (let i=this.PROPS.run.timeFrameStart+3600; i<=this.PROPS.run.timeFrameEnd;i+=3600)
-			{
-			if (textCells.length >= index)
-				{
-				textCells[index-1].innerHTML=getDigitString(i)
-				}
-			else
-				{
-				let cell =getdigitcell(getDigitString(i))
-				textCells.push(cell)
-				textCellContainer.insertBefore(cell,textCellEmptyCell)
-				}
-			if (hourCells.length < index)
-				{
-
-				let cell =gethourcell()
-				hourCells.push(cell)
-				hourCellContainer.append(cell)
-				console
-				}
-			index+=1
-			}
-		while (textCells.length > index)
-			{
-			textCells.pop().remove()
-			}
-		while (hourCells.length > index)
-			{
-			hourCells.pop().remove()
-			}
-
-		return;
 		}
 	//#########################################################################################################
 	//## refreshAppSizeAfterResizeOrInit()

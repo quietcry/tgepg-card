@@ -30,9 +30,9 @@ export class tgEpgProgItemDefaults extends tgEpgDefaultsCommon
 			:host
 				{
 				display:inline-block;
-				width:     calc( var(--progItemSpan) *  var(--scale-used) ) !important;
-				max-width: calc( var(--progItemSpan) *  var(--scale-used) ) !important;
-				min-width: calc( var(--progItemSpan) *  var(--scale-used) ) !important;
+				width:     calc( var(--progItemSpan, 0) *  var(--scale-used) ) !important;
+				max-width: calc( var(--progItemSpan, 0) *  var(--scale-used) ) !important;
+				min-width: calc( var(--progItemSpan, 0) *  var(--scale-used) ) !important;
 				white-space: nowrap;
 				margin:0px;
 				padding:0px;
