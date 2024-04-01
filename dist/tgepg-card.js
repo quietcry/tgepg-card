@@ -1469,7 +1469,7 @@ class tgControls extends HTMLElement {
     //######################################################################################################################################
     connected() {
         //console.debug("is connected - now fire connected event", this)
-        this._debug("is connected - now fire connected event");
+        this._log("is connected - now fire connected event");
         this.PROPS.run["states"]["connected"] = true;
         var ev = new CustomEvent("connected");
         this.dispatchEvent(ev);
@@ -1689,7 +1689,7 @@ class tgControlsHelperBasic {
             "warn",
             "log",
             "error"
-        ].includes(type)) return;
+        ].includes(type) || this.PROPS.run?.msg[type] && !this._getBoolean(this.PROPS.run.msg[type])) return;
         if (typeof this.hasAttribute === "function") args.unshift(this.nodeName + (this.hasAttribute("id") ? "(" + this.getAttribute("id") + ")" : "") + ":");
         if (this.PROPS.run.msg[type.toLowerCase()] !== false) console[type.toLowerCase()].apply(this, args);
     }
@@ -2420,6 +2420,10 @@ class tgEpgDataService {
                     "TITLE",
                     "TITLE"
                 ],
+                SUBTITLE: [
+                    "SUBTITLE",
+                    "SUBTITLE"
+                ],
                 DESCRIPTION: [
                     "DESCRIPTION",
                     "DESCRIPTION"
@@ -2431,8 +2435,12 @@ class tgEpgDataService {
                 ]
             },
             showTemplate: `<tgepg-progitem class="TabCell" span="<!DURATION!>" <!ADDS!> start="<!START!>" end="<!END!>" channelid="<!CHANNELID!>" id="<!ID!>" style="--progItemSpan: <!DURATION!>px;">
-							<div slot="titleslot"><!TITLE!></div>
-							<div slot="descriptionslot"><!DESCRIPTION!></div>
+							<div name="title" slot="titleslot"><!TITLE!></div>
+							<div name="subtitle" slot="subtitleslot"><!SUBTITLE!></div>
+							<div name="description" slot="descriptionslot"><!DESCRIPTION!></div>
+							<div name="start" slot="startslot" content="time"><!START!></div>
+							<div name="end" slot="endslot" content="time"><!END!></div>
+							<div name="date" slot="noslot" content="date"><!START!></div>
 							</tgepg-progitem>`,
             channelTemplate: `<tgepg-progline class="TabCell" <!ADDS!> channelid="<!CHANNELID!>" id="<!ID!>"><!SHOWTEMPLATE!></tgepg-progline>`
         };
@@ -4605,7 +4613,10 @@ class tgEpgProgItem extends (0, _tgControlsJs.tgControls) {
             },
             attr: this._extender({}, tgEpgProgItem.properties),
             run: {
-                connected: 0
+                connected: 0,
+                msg: {
+                    log: false
+                }
             }
         });
         this["PROPS"]["run"] = this._extender(this["PROPS"]["default"] || {}, this["PROPS"]["run"] || {}, props);
@@ -4755,6 +4766,9 @@ class tgEpgProgItem extends (0, _tgControlsJs.tgControls) {
                     that.manageEvent.call(that, ev);
                 }, false);
             } else {
+                this.addEventListener("mousemove", function(ev) {
+                    that.manageEvent.call(that, ev);
+                }, true);
                 this.addEventListener("mouseover", function(ev) {
                     that.manageEvent.call(that, ev);
                 }, true);
@@ -4769,6 +4783,9 @@ class tgEpgProgItem extends (0, _tgControlsJs.tgControls) {
                 }, false);
             }
         } else {
+            this.removeEventListener("mousemove", function(ev) {
+                that.manageEvent.call(that, ev);
+            }, false);
             this.removeEventListener("touchmove", function(ev) {
                 that.manageEvent.call(that, ev);
             }, false);
@@ -4798,11 +4815,19 @@ class tgEpgProgItem extends (0, _tgControlsJs.tgControls) {
     // //
     // //######################################################################################################################################
     manageEvent(ev) {
+        var that = this;
         if (this._getType(this.PROPS.run.master, "string")) this.PROPS.run.master = this._getMasterElement(this, this.PROPS.run.master);
         if (!this.PROPS.run.master) return;
-        if (!this.PROPS.run.data) this.PROPS.run["data"] = {
-            title: "Titlet"
-        };
+        if (!this.PROPS.run.data) {
+            let slots = this.querySelectorAll(`[slot][name]`);
+            this.PROPS.run["data"] = {};
+            for (let slot of slots){
+                let format = (slot.getAttribute("content") || "").toLowerCase();
+                let txt = slot.innerHTML;
+                txt = format == "time" ? getTime(txt) : format == "date" ? getDate(txt) : txt;
+                this.PROPS.run.data[slot.getAttribute("name")] = txt;
+            }
+        }
         let detail = {
             task: ev.type,
             data: this.PROPS.run["data"],
@@ -4816,6 +4841,14 @@ class tgEpgProgItem extends (0, _tgControlsJs.tgControls) {
             detail: detail
         });
         this.PROPS.run.master.dispatchEvent(event);
+        function getTime(str) {
+            let d = new Date(parseInt(str) * 1000);
+            return `${that._get2digit(d.getHours())}:${that._get2digit(d.getMinutes())}`;
+        }
+        function getDate(str) {
+            let d = new Date(parseInt(str) * 1000);
+            return `${that._get2digit(d.getDate())}.${that._get2digit(d.getMonth() + 1)}.${d.getFullYear()}`;
+        }
         var elem, task, master, infobox, slots, slot, visibleMaster, maus, visibleItem, mausquadrant, style, boxItem;
         //this._log("EVENT", 		detail	)
         return;
@@ -5361,28 +5394,8 @@ class tgEpgTooltipp extends (0, _tgControlsJs.tgControls) {
         });
         this["PROPS"]["run"] = this._extender(this["PROPS"]["default"] || {}, this["PROPS"]["run"] || {}, props);
         this.app = this.shadowRoot.querySelector('[name="app"]');
-    // this._containerWidth=null;
-    // this._supermaster=null;
-    // this.supressScrollEvent=0;
-    // this._scrollWidth=0;
-    // this._direction=null;
-    // this.container = this.shadowRoot.querySelector('[name="container"]');
-    /*
-		let body=document.querySelector("body");
-													`<div name="EpgInfoBox" class="hide"></div>`
-		this.EpgInfoBox = this.shadowRoot.querySelector('[name="EpgInfoBox"]');
-
- */ //this._writeOptions(this.PROPS.defaults._storageKey, this.PROPS.set);
-    ////this._debug("JSON", this.readOptions(this.PROPS.defaults._storageKey))
-    //this.PROPS.run.topElements = [this.app, this.icon];
-    //this._log("construction ended", "props:",this.PROPS, "me:", this);
-    //this._debug("constructor - constructed");
+        this.container = this._shadowRoot.querySelector('[name="container"]');
     }
-    //######################################################################################################################################
-    //
-    //
-    //
-    //######################################################################################################################################
     //######################################################################################################################################
     //
     // properties()
@@ -5400,11 +5413,7 @@ class tgEpgTooltipp extends (0, _tgControlsJs.tgControls) {
     //######################################################################################################################################
     static get properties() {
         let defProps = (0, _defaultsTooltippJs.tgEpgToolTippDefaults).properties || {};
-        let props = {
-            timelinestart: null,
-            enableTimemarker: false,
-            enableToolTipp: false
-        };
+        let props = {};
         let superProps = super.properties || {};
         props = Object.assign(superProps, defProps, props);
         return props;
@@ -5424,28 +5433,50 @@ class tgEpgTooltipp extends (0, _tgControlsJs.tgControls) {
         oldVal = oldVal || this.PROPS.paras[attrName];
         super.attributeChangedCallback(attrName, newVal, oldVal);
         this.PROPS.paras[attrName] = newVal;
-        switch(attrName){
-            case "direction":
-                if (newVal == "horizontal" || newVal == "vertical") {
-                    this._direction = newVal;
-                    this.init();
-                }
-                break;
-            default:
-                break;
-        }
+        attrName;
     }
     refresh() {
         if (!this.calculateRect()) return;
         var that = this;
+        if (this.PROPS.run.data.task == "mouseleave") {
+            this.classList.add("hide");
+            return;
+        }
+        let txt = _template_mapper(this.PROPS.run.template, this.PROPS.run.data.data);
+        txt = txt.replaceAll(/<!.+?>/gi, '<div name="empty"></div>');
+        this.container.innerHTML = txt;
         this.classList.remove("hide");
         let style = this.calculatePos();
-        console.log(style, this.PROPS.run.data);
+        //console.log(style, this.PROPS.run.data)
         setStyle(style);
         function setStyle(sty) {
             var myKeys = Object.keys(sty);
             for(let i = 0; i < myKeys.length; i++)that.style[myKeys[i]] = sty[myKeys[i]];
         }
+        //###############################
+        function _template_mapper(templ, source, map = null) {
+            var mapkeys = map ? Object.keys(map) : Object.keys(source);
+            for (let index of mapkeys){
+                const needle = new RegExp(`<!${map ? map[index][0] : index.toUpperCase()}!>`, "gi");
+                if (needle.test(templ)) {
+                    if (map) for(let p = 1; p < map[index].length; p++){
+                        if (!(map[index][p] in source)) continue;
+                        let txt = source[map[index][p]];
+                        let tpl = templ.replaceAll(needle, txt);
+                        if (tpl != templ) {
+                            templ = tpl;
+                            break;
+                        }
+                    }
+                    else {
+                        let txt = source[index] || "";
+                        templ = templ.replaceAll(needle, txt);
+                    }
+                }
+            }
+            return templ;
+        }
+    //###############################
     }
     calculatePos() {
         let style = {
@@ -5453,27 +5484,34 @@ class tgEpgTooltipp extends (0, _tgControlsJs.tgControls) {
             top: "0px"
         };
         let client = this.getBoundingClientRect();
-        console.log(client);
-        // let tmpLeft=basis.x-client.x
-        // let tmpRight=(basis.x+basis.width)-(client.x+client.width)
-        // let tmpTop=basis.y-client.y
-        // let tmpBottom=(basis.y+basis.height)-(client.y+client.height)
-        // tmpLeft=(tmpRight<=0)?0:tmpLeft
-        // tmpRight=(tmpRight<=0)?0:tmpRight
-        // tmpTop=(tmpTop<=0)?0:tmpTop
-        // tmpBottom=(tmpBottom<=0)?0:tmpBottom
+        let pos = this.PROPS.run?.data.pos || null;
+        if (!pos) return false;
+        let rect = this.PROPS.run.Rect;
+        let mouse = this.PROPS.run?.data.mouse || null;
+        let top = pos.y - client.height - rect.offsetY + this.PROPS.run.host.scrollTop;
+        let top1 = null;
+        if (top < 0) {
+            top1 = pos.y - rect.offsetY + pos.height + this.PROPS.run.host.scrollTop;
+            top = top1;
+        }
+        style["top"] = `${top}px`;
+        let left = mouse.x - rect.offsetX - client.width / 2 + this.PROPS.run.host.scrollLeft;
+        left = left < rect.left ? rect.left : left;
+        left = left + client.width > rect.width ? rect.width - client.width : left;
+        style["left"] = `${left}px`;
         return style;
     }
     calculateRect() {
-        if (this.PROPS.run.visibleRect) return true;
-        this.PROPS.run.host = this.parentNode;
-        if (!this.PROPS.run.host) return false;
+        if (this.PROPS.run.Rect) return true;
+        let host = this.parentNode;
+        if (!host) return false;
+        this.PROPS.run["host"] = host;
         if (this._getType(this.PROPS.run.master, "string")) this.PROPS.run.master = this._getMasterElement(this.PROPS.run.master);
         if (!this._getType(this.PROPS.run.master, "nodeElement")) return false;
-        let host = this.PROPS.run.host.getBoundingClientRect();
+        host = this.PROPS.run.host.getBoundingClientRect();
         let basis = this._getType(this.PROPS.run.master, "nodeElement") ? this.PROPS.run.master.getBoundingClientRect() : host;
         let restr = this.PROPS.run.restrictions || {};
-        this.PROPS.run["visibleRect"] = {
+        this.PROPS.run["Rect"] = {
             left: basis.left - host.left + (restr.left || 0),
             right: host.right - basis.right + (restr.right || 0),
             top: basis.top - host.top + (restr.top || 0),
@@ -5483,57 +5521,8 @@ class tgEpgTooltipp extends (0, _tgControlsJs.tgControls) {
             offsetX: basis.x,
             offsetY: basis.y
         };
+        console.log("RECT", this.PROPS.run["Rect"], this.PROPS.run.master, basis, this.PROPS.run.host, host);
         return true;
-    }
-    //######################################################################################################################################
-    //init()
-    //prüft die Umgebung und passt Parameter entsprechend an
-    //
-    //######################################################################################################################################
-    init() {
-        var that = this;
-        //var direction=this.getAttribute("direction");
-        if (this._containerWidth && this._direction == "horizontal") this.container.style.width = this._containerWidth + "px";
-        else if (this._containerWidth && this._direction == "vertical") this.container.style.height = this._containerWidth + "px";
-        else return;
-        if (!this.hasAttribute("hasScrollHandler") || parseInt(this.getAttribute("hasScrollHandler")) !== 1) {
-            this.setAttribute("hasScrollHandler", "1");
-            this.addEventListener("scroll", function(ev) {
-                if (that.supressScrollEvent !== 1) {
-                    let offset = that._direction == "horizontal" ? that.scrollLeft : that.scrollTop;
-                    var ev = new CustomEvent("scrollbar", {
-                        detail: {
-                            direction: that._direction,
-                            scrollwidth: offset
-                        }
-                    });
-                    this.dispatchEvent(ev);
-                }
-                that.supressScrollEvent = 0;
-            }, false);
-        }
-        return;
-    }
-    //######################################################################################################################################
-    //scrollIt()
-    //prüft die Umgebung und passt Parameter entsprechend an
-    //
-    //######################################################################################################################################
-    scrollIt() {
-        var that = this;
-        var direction = this.getAttribute("direction");
-        if (this.supressScrollEvent == 1) switch(direction){
-            case "horizontal":
-                this.scrollLeft = this._scrollWidth;
-                break;
-            case "vertical":
-                this.scrollTop = this._scrollWidth;
-                break;
-            default:
-                break;
-        }
-        this.supressScrollEvent = 0;
-        return;
     }
     //#########################################################################################################
     //##
@@ -5546,14 +5535,12 @@ class tgEpgTooltipp extends (0, _tgControlsJs.tgControls) {
     }
     set master(val) {
         this.PROPS.run["master"] = val;
-        this.calculateRect();
     }
     get restrictions() {
         return this.PROPS.run.restrictions;
     }
     set restrictions(val) {
         this.PROPS.run["restrictions"] = val;
-        this.calculateRect();
     }
     get data() {
         return this.PROPS.run.data;
@@ -5575,7 +5562,16 @@ class tgEpgToolTippDefaults extends (0, _defaultsCommonJs.tgEpgDefaultsCommon) {
     constructor(that){
         super("open", that);
         this["PROPS"] = {
-            default: this._extender({}, this["PROPS"].default || {}, {})
+            default: this._extender({}, this["PROPS"].default || {}, {}),
+            run: {
+                template: `
+												<div class="nowrap"><!DATE!> | <!START!> - <!END!></div>
+												<br>
+												<div class="nowrap title"><!TITLE!></div>
+												<br>
+												<div class="nowrap"><!SUBTITLE!></div>
+												`
+            }
         };
     }
     get properties() {
@@ -5592,40 +5588,39 @@ class tgEpgToolTippDefaults extends (0, _defaultsCommonJs.tgEpgDefaultsCommon) {
 				{
 				position:absolute;
 				z-index:2001;
-				background-color:white;
-				max-width:40%;
-				max-height:50%;
-				padding:4px;
 				}
 			div
 				{
 				white-space: normal;
 				}
-			.hide
+			[name="container"]
 				{
-				display:none;
-				}
+				background-color:white;
+				margin:4px;
+				padding:3px;
+				border: solid black 1px;
+				border-radius:8px;	
+				}	
 			.nowrap
 				{
 				display: inline-block;
 				white-space: nowrap;
 				}
+			.title
+				{
+				font-weight: bold;
+				}
+			div:has(> div[name="empty"])
+				{
+				display:none;	
+				}	
 			</style>
 			`;
         var tmp = styles + `
 			<!-- App -->
-			Tooltip
-			<div>
-				<slot name="subtitleslot"></slot>
-			</div>
-			<div>
-				<slot name="titleslot"></slot>
-			</div>
-			<div class="nowrap">
-				<slot name="dateslot"></slot><slot name="startslot" class="nowrap"></slot>-<slot name="endslot" class="nowrap"></slot> <slot name="durationslot" class="nowrap"></slot>
-			</div>
+			<div name="container"></div>
 			<!-- App Ende-->
-				`;
+			`;
         return tmp;
     }
 }
