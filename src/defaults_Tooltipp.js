@@ -12,6 +12,15 @@ export class tgEpgToolTippDefaults extends tgEpgDefaultsCommon
 									{
 
 									}),
+						run:		{
+									template:	`
+												<div class="nowrap"><!DATE!> | <!START!> - <!END!></div>
+												<br>
+												<div class="nowrap title"><!TITLE!></div>
+												<br>
+												<div class="nowrap"><!SUBTITLE!></div>
+												`
+									}			
 						}
 		}
 	get properties()
@@ -29,40 +38,40 @@ export class tgEpgToolTippDefaults extends tgEpgDefaultsCommon
 				{
 				position:absolute;
 				z-index:2001;
-				background-color:white;
-				max-width:40%;
-				max-height:50%;
-				padding:4px;
 				}
 			div
 				{
 				white-space: normal;
 				}
-			.hide
+			[name="container"]
 				{
-				display:none;
-				}
+				background-color:white;
+				margin:4px;
+				padding:3px;
+				border: solid black 1px;
+				border-radius:8px;	
+				}	
 			.nowrap
 				{
 				display: inline-block;
 				white-space: nowrap;
 				}
+			.title
+				{
+				font-weight: bold;
+				}
+			div:has(> div[name="empty"])
+				{
+				display:none;	
+				}	
 			</style>
 			`;
-			var tmp=styles+`
+			var tmp=styles+
+			`
 			<!-- App -->
-			Tooltip
-			<div>
-				<slot name="subtitleslot"></slot>
-			</div>
-			<div>
-				<slot name="titleslot"></slot>
-			</div>
-			<div class="nowrap">
-				<slot name="dateslot"></slot><slot name="startslot" class="nowrap"></slot>-<slot name="endslot" class="nowrap"></slot> <slot name="durationslot" class="nowrap"></slot>
-			</div>
+			<div name="container"></div>
 			<!-- App Ende-->
-				`;
+			`;
 			return	tmp;
 		}
 	}

@@ -63,12 +63,17 @@ export class tgEpgDataService
                 CHANNELID: ["CHANNELID", "channelID", "CHANNELID"],
 				ID:["ID", "id", "ID"],
                 TITLE: ["TITLE", "TITLE"],
+                SUBTITLE: ["SUBTITLE", "SUBTITLE"],
 				DESCRIPTION:["DESCRIPTION", "DESCRIPTION"],
 				adds:["ADDS", "adds", "ADDS"],
                 },
             showTemplate: `<tgepg-progitem class="TabCell" span="<!DURATION!>" <!ADDS!> start="<!START!>" end="<!END!>" channelid="<!CHANNELID!>" id="<!ID!>" style="--progItemSpan: <!DURATION!>px;">
-							<div slot="titleslot"><!TITLE!></div>
-							<div slot="descriptionslot"><!DESCRIPTION!></div>
+							<div name="title" slot="titleslot"><!TITLE!></div>
+							<div name="subtitle" slot="subtitleslot"><!SUBTITLE!></div>
+							<div name="description" slot="descriptionslot"><!DESCRIPTION!></div>
+							<div name="start" slot="startslot" content="time"><!START!></div>
+							<div name="end" slot="endslot" content="time"><!END!></div>
+							<div name="date" slot="noslot" content="date"><!START!></div>
 							</tgepg-progitem>`,
             channelTemplate: `<tgepg-progline class="TabCell" <!ADDS!> channelid="<!CHANNELID!>" id="<!ID!>"><!SHOWTEMPLATE!></tgepg-progline>`,
             };

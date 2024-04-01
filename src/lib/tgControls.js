@@ -213,7 +213,7 @@ export class tgControls extends HTMLElement
 	connected()
 		{
 		//console.debug("is connected - now fire connected event", this)
-		this._debug("is connected - now fire connected event")
+		this._log("is connected - now fire connected event")
 		this.PROPS.run["states"]["connected"] =true;
 		var ev = new CustomEvent('connected');
 		this.dispatchEvent(ev);

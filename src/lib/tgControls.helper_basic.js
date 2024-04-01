@@ -161,7 +161,7 @@ export class tgControlsHelperBasic
 		{
 		var args = Array.from(arguments);
 		var type=args.shift().toLowerCase()
-		if (! ["debug","info","warn","log","error"].includes(type)) return;
+		if (! ["debug","info","warn","log","error"].includes(type) || (this.PROPS.run?.msg[type] && !this._getBoolean(this.PROPS.run.msg[type]))) return;
 		if (typeof this.hasAttribute === 'function')
 			{
 			args.unshift(this.nodeName+((this.hasAttribute("id"))?"("+this.getAttribute("id")+")":"")+":");

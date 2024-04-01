@@ -35,7 +35,12 @@ export class tgEpgProgItem extends tgControls
 							},
 				attr:		this._extender({},tgEpgProgItem.properties),
 				run: 		{
-							connected:0
+							connected:0,
+							msg:	
+								{
+								log:false,
+								},
+
 							}
 				}
 			)
@@ -228,6 +233,7 @@ export class tgEpgProgItem extends tgControls
 				}
 			else
 				{
+				this.addEventListener("mousemove", function(ev){that.manageEvent.call(that,ev)}, true);
 				this.addEventListener("mouseover", function(ev){that.manageEvent.call(that,ev)}, true);
 				this.addEventListener("mouseleave", function(ev){that.manageEvent.call(that,ev)});
 				this.addEventListener("click", function(ev){that.manageEvent.call(that,ev)}, false);
@@ -236,6 +242,7 @@ export class tgEpgProgItem extends tgControls
 			}
 		else
 			{
+			this.removeEventListener("mousemove", function(ev){that.manageEvent.call(that,ev)}, false);
 			this.removeEventListener("touchmove", function(ev){that.manageEvent.call(that,ev)}, false);
 			this.removeEventListener("touchend", function(ev){that.manageEvent.call(that,ev)}, false);
 			this.removeEventListener("touchstart", function(ev){that.manageEvent.call(that,ev)}, false);
@@ -252,6 +259,7 @@ export class tgEpgProgItem extends tgControls
 	// //######################################################################################################################################
 	manageEvent(ev)
 		{
+		var that=this	
 		if (this._getType(this.PROPS.run.master, "string"))
 			{
 			this.PROPS.run.master=this._getMasterElement(this, this.PROPS.run.master)	
@@ -259,12 +267,29 @@ export class tgEpgProgItem extends tgControls
 		if (! this.PROPS.run.master) return;
 		if (! this.PROPS.run.data)
 			{
-			this.PROPS.run["data"]={title:"Titlet"}
+			let slots=this.querySelectorAll(`[slot][name]`)
+			this.PROPS.run["data"]={}
+			for (let slot of slots)
+				{
+				let format=	(slot.getAttribute("content")||"").toLowerCase()
+				let txt=slot.innerHTML
+				txt=(format=="time")?getTime(txt):(format=="date")?getDate(txt):txt
+				this.PROPS.run.data[slot.getAttribute("name")]=txt
+				}	
 			}
 		let detail={task:ev.type,data:this.PROPS.run["data"], pos: this.getBoundingClientRect(), mouse:{x:ev.clientX||null, y:ev.clientY||null}}
 		let event = new CustomEvent('userInteraction', {detail:detail});
 		this.PROPS.run.master.dispatchEvent(event);
-
+		function getTime(str)
+			{
+			let d=new Date(parseInt(str)*1000)
+			return `${that._get2digit(d.getHours())}:${that._get2digit(d.getMinutes())}`
+			}
+		function getDate(str)
+			{
+			let d=new Date(parseInt(str)*1000)
+			return `${that._get2digit(d.getDate())}.${that._get2digit(d.getMonth() + 1)}.${d.getFullYear()}`
+			}
 		
 		//this._log("EVENT", 		detail	)
 return
