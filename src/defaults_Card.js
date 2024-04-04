@@ -164,7 +164,7 @@ export class tgEpgCardDefaults extends tgEpgDefaultsCommon
 				background-color: darkred;
 				position:relative;
 				overflow-x: auto;
-				overflow-y: visible;
+				overflow-y: hidden;
 
 				}
 			/*hide scrollbar*/

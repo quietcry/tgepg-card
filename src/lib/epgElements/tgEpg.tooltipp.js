@@ -12,9 +12,9 @@ import { tgEpgToolTippDefaults } from "../../defaults_Tooltipp.js";
 
 export class tgEpgTooltipp extends tgControls
 	{
-	constructor(mode="open", props={})
+	constructor(mode="open", defClass=new tgEpgToolTippDefaults(), props={})
 		{
-		super(mode, new tgEpgToolTippDefaults(), props);
+		super(mode, defClass, props);
 		var that=this;
 	
 		// default Parameter nach Props einlesen
@@ -104,63 +104,58 @@ export class tgEpgTooltipp extends tgControls
 			return
 			}
 
-		let txt =_template_mapper(this.PROPS.run.template, this.PROPS.run.data.data)	
+		let txt =this.template_mapper(this.PROPS.run.template, this.PROPS.run.data.data)	
 		txt=txt.replaceAll(/<!.+?>/gi, '<div name="empty"></div>')
 		this.container.innerHTML=txt	
 		this.classList.remove("hide")
 		let style=this.calculatePos()
 		
 		//console.log(style, this.PROPS.run.data)
-		setStyle(style)
-		function setStyle(sty)
-			{
-			var myKeys=Object.keys(sty)
-			for (let i = 0; i < myKeys.length; i++)
-				{
-				that.style[myKeys[i]] = sty[myKeys[i]];
-				}
-			}
+		this.setStyle(style)
+		}
         //###############################
-		function _template_mapper(templ, source, map=null)
+	setStyle(sty)
+		{
+		var myKeys=Object.keys(sty)
+		for (let i = 0; i < myKeys.length; i++)
 			{
-			var mapkeys = (map)?Object.keys(map):Object.keys(source);
-			for (let index of mapkeys)
+			this.style[myKeys[i]] = sty[myKeys[i]];
+			}
+		}
+
+        //###############################
+	template_mapper(templ, source, map=null)
+		{
+		var mapkeys = (map)?Object.keys(map):Object.keys(source);
+		for (let index of mapkeys)
+			{
+			const needle = new RegExp(`<!${(map)?map[index][0]:index.toUpperCase()}!>`, "gi");
+			if (needle.test(templ))
 				{
-	
-				const needle = new RegExp(`<!${(map)?map[index][0]:index.toUpperCase()}!>`, "gi");
-
-				if (needle.test(templ))
-					{
-	
-					if (map)
-						{	
-						for (let p=1; p<map[index].length;	p++)
+				if (map)
+					{	
+					for (let p=1; p<map[index].length;	p++)
+						{
+						if ( ! (map[index][p] in source) ) continue
+						let txt=source[map[index][p]]
+						let tpl=templ.replaceAll(needle, txt)
+						if (tpl != templ)
 							{
-							if ( ! (map[index][p] in source) ) continue
-							let txt=source[map[index][p]]
-
-							let tpl=templ.replaceAll(needle, txt)
-							if (tpl != templ)
-								{
-								templ=tpl
-								break	
-								}
+							templ=tpl
+							break	
 							}
 						}
-					else
-						{
-						let txt=source[index]||""
-	
-						templ=templ.replaceAll(needle, txt)
-
-						}	
 					}
-				}	
-			return templ
-			}
-        //###############################
-
-		}	
+				else
+					{
+					let txt=source[index]||""
+					templ=templ.replaceAll(needle, txt)
+					}	
+				}
+			}	
+		return templ
+		}
+    //###############################
 	calculatePos()
 		{
 		let style={left:"0px",top:"0px"}	

@@ -12,6 +12,7 @@ import './lib/epgElements/tgEpg.progItem.js';
 //import './lib/tgControls.FloatingMenu.js';
 import './lib/tgControls.Scrollbar.js';
 import './lib/epgElements/tgEpg.tooltipp.js';
+import './lib/epgElements/tgEpg.info.js';
 
 
 export class tgEpgCard extends tgControls
@@ -367,6 +368,7 @@ export class tgEpgCard extends tgControls
 			this.floatingMenu 	= this._shadowRoot.querySelector('tg-floatingMenu');
 			this.workerSource 	= this._shadowRoot.querySelector('[name="worker"]');
 			this.epgTooltipp	= null
+			this.epgInfo		= null
 			}
 		//console.debug("query", this.channelBox || "none")
 		// this.buttonCell = this.shadowRoot.querySelector('[name="buttonCell"]');
@@ -389,16 +391,24 @@ export class tgEpgCard extends tgControls
 			
 	detectENV()
 		{
-		this.PROPS.run["ENV"]={context:"panel", mobile:false}
+		this.PROPS.run["ENV"]=	{
+								context:		"panel",
+								mobile:			false,
+								touch: 			(('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (navigator.msMaxTouchPoints > 0)),
+								}
 			
 		
 		}	
 	manageEPGInfoEvent(event)
 		{
 		let details=event.detail
-		if (this.epgTooltipp && this._enable_tooltipp)
+		if (["mouseover", "mouseleave", "mousemove"].includes(details.task) && this.epgTooltipp && this._enable_tooltipp)
 			{
 			this.epgTooltipp.data=event.detail	
+			}
+		if (["click", "dblclick"].includes(details.task) && this.epgInfo && this._enable_epgInfo)
+			{
+			this.epgInfo.data=event.detail	
 			}
 		}		
 	//######################################################################################################################################
@@ -425,21 +435,26 @@ export class tgEpgCard extends tgControls
 
 		this.PROPS.run["states"]["constructed"]=true
 		return;
-				
+		
+		function _connectToInfoTooltipp(needle)
+			{
+			let elem=that.epgOuterBox.querySelector(needle);
+			if (! elem)
+				{
+				elem=document.createElement(needle);
+				elem.classList.add("hide");
+				elem.setAttribute("name", needle);
+				that.epgOuterBox.appendChild(elem);
+				elem.master=that.epgOuterBox
+				elem.restrictions={left:that.channelBox.getBoundingClientRect().width}
+				}
+			return elem
+			}
 		function activateToolTipp()
 			{
-			this.progListApp.enableToolTipp = this._enable_tooltipp
-			this.epgTooltipp=this.epgOuterBox.querySelector('tgepg-tooltipp');
-			if (! this.epgTooltipp)
-				{
-				this.epgTooltipp=document.createElement("tgepg-tooltipp");
-				this.epgTooltipp.classList.add("hide");
-				this.epgTooltipp.setAttribute("name","tgEpgTooltipp");
-				this.epgOuterBox.appendChild(this.epgTooltipp);
-				this.epgTooltipp.master=this.epgOuterBox
-				this.epgTooltipp.restrictions={left:this.channelBox.getBoundingClientRect().width}
-				}
-	
+			this.progListApp.enableToolTipp = this._enable_tooltipp || this._enable_epgInfo
+			this.epgTooltipp=_connectToInfoTooltipp('tgepg-tooltipp');
+			this.epgInfo=_connectToInfoTooltipp('tgepg-info');			
 			if (this._enable_tooltipp || this._enable_epgInfo)
 				{
 				this.epgOuterBox.addEventListener("userInteraction", function(ev){that.manageEPGInfoEvent.call(that,ev)}, false);	

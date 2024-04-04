@@ -1,6 +1,6 @@
-import { tgEpgDefaultsCommon }  from "./defaults_Common.js"
+import { tgEpgToolTippDefaults }  from "./defaults_Tooltipp.js"
 
-export class tgEpgToolTippDefaults extends tgEpgDefaultsCommon
+export class tgEpgInfoDefaults extends tgEpgToolTippDefaults
 	{
 	thisIsClass=true		
 	constructor(that)
@@ -19,6 +19,15 @@ export class tgEpgToolTippDefaults extends tgEpgDefaultsCommon
 												<div class="nowrap title"><!TITLE!></div>
 												<br>
 												<div class="nowrap"><!SUBTITLE!></div>
+												<div class="Tab greedyW">
+													<div class="TabRow">
+														<div class="TabCell greedyW"></div>
+														<div class="TabCell">Rec</div>
+														<div class="TabCell closeButton">XXX</div>
+													</div>
+												</div>
+												<hr>
+												<div class=""><!DESCRIPTION!></div>
 												`
 									}			
 						}
@@ -28,55 +37,27 @@ export class tgEpgToolTippDefaults extends tgEpgDefaultsCommon
 		var props=super.properties||{_common:false};
 		return props;
 		}	
-
 	static get styles()
 		{
 		var styles=super.styles||"";
 			styles=styles+`
 			<style>
 			:host
-				{
-				position:absolute;
-				z-index:2001;
-				}
-			div
-				{
-				white-space: normal;
-				}
-			[name="container"]
-				{
-				background-color:white;
-				margin:4px;
-				padding:3px;
-				border: solid black 1px;
-				border-radius:8px;	
-				}	
-			.nowrap
-				{
-				display: inline-block;
-				white-space: nowrap;
-				}
-			.title
-				{
-				font-weight: bold;
-				}
-			div:has(> div[name="empty"])
-				{
-				display:none;	
-				}	
+			{ max-width:40%;}
 			</style>
 			`;
 		return styles	
 		}
+
 	static get template()
 		{
-		var styles=this.styles;
+		var styles=this.styles||"";
 		var tmp=styles+
 			`
 			<!-- App -->
 			<div name="container"></div>
 			<!-- App Ende-->
-			`;	
+			`;
 			return	tmp;
 		}
 	}

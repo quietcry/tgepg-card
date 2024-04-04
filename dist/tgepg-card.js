@@ -616,6 +616,7 @@ var _tgEpgProgItemJs = require("./lib/epgElements/tgEpg.progItem.js");
 //import './lib/tgControls.FloatingMenu.js';
 var _tgControlsScrollbarJs = require("./lib/tgControls.Scrollbar.js");
 var _tgEpgTooltippJs = require("./lib/epgElements/tgEpg.tooltipp.js");
+var _tgEpgInfoJs = require("./lib/epgElements/tgEpg.info.js");
 class tgEpgCard extends (0, _tgControlsJs.tgControls) {
     thisIsClass = true;
     // private properties
@@ -881,6 +882,7 @@ class tgEpgCard extends (0, _tgControlsJs.tgControls) {
             this.floatingMenu = this._shadowRoot.querySelector("tg-floatingMenu");
             this.workerSource = this._shadowRoot.querySelector('[name="worker"]');
             this.epgTooltipp = null;
+            this.epgInfo = null;
         }
     //console.debug("query", this.channelBox || "none")
     // this.buttonCell = this.shadowRoot.querySelector('[name="buttonCell"]');
@@ -902,12 +904,21 @@ class tgEpgCard extends (0, _tgControlsJs.tgControls) {
     detectENV() {
         this.PROPS.run["ENV"] = {
             context: "panel",
-            mobile: false
+            mobile: false,
+            touch: "ontouchstart" in window || navigator.maxTouchPoints > 0 || navigator.msMaxTouchPoints > 0
         };
     }
     manageEPGInfoEvent(event) {
         let details = event.detail;
-        if (this.epgTooltipp && this._enable_tooltipp) this.epgTooltipp.data = event.detail;
+        if ([
+            "mouseover",
+            "mouseleave",
+            "mousemove"
+        ].includes(details.task) && this.epgTooltipp && this._enable_tooltipp) this.epgTooltipp.data = event.detail;
+        if ([
+            "click",
+            "dblclick"
+        ].includes(details.task) && this.epgInfo && this._enable_epgInfo) this.epgInfo.data = event.detail;
     }
     //######################################################################################################################################
     //init()
@@ -928,19 +939,24 @@ class tgEpgCard extends (0, _tgControlsJs.tgControls) {
         if (viewport) this._resizeObserver.observe(viewport);
         this.PROPS.run["states"]["constructed"] = true;
         return;
-        function activateToolTipp() {
-            this.progListApp.enableToolTipp = this._enable_tooltipp;
-            this.epgTooltipp = this.epgOuterBox.querySelector("tgepg-tooltipp");
-            if (!this.epgTooltipp) {
-                this.epgTooltipp = document.createElement("tgepg-tooltipp");
-                this.epgTooltipp.classList.add("hide");
-                this.epgTooltipp.setAttribute("name", "tgEpgTooltipp");
-                this.epgOuterBox.appendChild(this.epgTooltipp);
-                this.epgTooltipp.master = this.epgOuterBox;
-                this.epgTooltipp.restrictions = {
-                    left: this.channelBox.getBoundingClientRect().width
+        function _connectToInfoTooltipp(needle) {
+            let elem = that.epgOuterBox.querySelector(needle);
+            if (!elem) {
+                elem = document.createElement(needle);
+                elem.classList.add("hide");
+                elem.setAttribute("name", needle);
+                that.epgOuterBox.appendChild(elem);
+                elem.master = that.epgOuterBox;
+                elem.restrictions = {
+                    left: that.channelBox.getBoundingClientRect().width
                 };
             }
+            return elem;
+        }
+        function activateToolTipp() {
+            this.progListApp.enableToolTipp = this._enable_tooltipp || this._enable_epgInfo;
+            this.epgTooltipp = _connectToInfoTooltipp("tgepg-tooltipp");
+            this.epgInfo = _connectToInfoTooltipp("tgepg-info");
             if (this._enable_tooltipp || this._enable_epgInfo) this.epgOuterBox.addEventListener("userInteraction", function(ev) {
                 that.manageEPGInfoEvent.call(that, ev);
             }, false);
@@ -1270,7 +1286,7 @@ class tgEpgCard extends (0, _tgControlsJs.tgControls) {
     }
 }
 
-},{"./lib/tgControls.js":"5PP50","./defaults_Card.js":"1MdrO","./tgepg-dataWorker.js":"jckaK","./lib/epgElements/tgEpg.timebar.js":"j75MS","./lib/epgElements/tgEpg.channelList.js":"hFcgl","./lib/epgElements/tgEpg.channelListItem.js":"aLlUv","./lib/epgElements/tgEpg.progList.js":"aIXjC","./lib/epgElements/tgEpg.progItem.js":"4puUn","./lib/tgControls.Scrollbar.js":"cWkM0","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3","./lib/epgElements/tgEpg.tooltipp.js":"75Vup"}],"5PP50":[function(require,module,exports) {
+},{"./lib/tgControls.js":"5PP50","./defaults_Card.js":"1MdrO","./tgepg-dataWorker.js":"jckaK","./lib/epgElements/tgEpg.timebar.js":"j75MS","./lib/epgElements/tgEpg.channelList.js":"hFcgl","./lib/epgElements/tgEpg.channelListItem.js":"aLlUv","./lib/epgElements/tgEpg.progList.js":"aIXjC","./lib/epgElements/tgEpg.progItem.js":"4puUn","./lib/tgControls.Scrollbar.js":"cWkM0","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3","./lib/epgElements/tgEpg.tooltipp.js":"75Vup","./lib/epgElements/tgEpg.info.js":"6EhGR"}],"5PP50":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "tgControls", ()=>tgControls);
@@ -2168,7 +2184,7 @@ class tgEpgCardDefaults extends (0, _defaultsCommonJs.tgEpgDefaultsCommon) {
 				background-color: darkred;
 				position:relative;
 				overflow-x: auto;
-				overflow-y: visible;
+				overflow-y: hidden;
 
 				}
 			/*hide scrollbar*/
@@ -4445,6 +4461,7 @@ class tgEpgProgListDefaults extends (0, _defaultsCommonJs.tgEpgDefaultsCommon) {
 			:host
 				{
 				--timeMarkerWidth: 2px;
+				--tgepg-progline-borderheight: 3px;
 				display:inline-block;
 				font-size:12px;
 				overflow-x:auto;
@@ -4471,7 +4488,7 @@ class tgEpgProgListDefaults extends (0, _defaultsCommonJs.tgEpgDefaultsCommon) {
 				}
 			.Progline
 				{
-				height:100% !important;
+				height:calc( var(--channelRowHeight) - 1 * var( --tgepg-progline-borderheight ) );
 				max-height:100% !important;
 				min-height:100% !important;
 				}
@@ -4481,8 +4498,8 @@ class tgEpgProgListDefaults extends (0, _defaultsCommonJs.tgEpgDefaultsCommon) {
 				}
 			[name="app"] > .TabRow
 				{
-				border-top: 3px solid black;
-				border-bottom: 3px solid black;
+				border-top: var( --tgepg-progline-borderheight ) solid black;
+				border-bottom: var( --tgepg-progline-borderheight ) solid black;
 				min-height: calc( var(--channelRowHeight) * 1 );
 				max-height: calc( var(--channelRowHeight) * 1 );
 				height: calc( var(--channelRowHeight) * 1 );
@@ -5378,8 +5395,8 @@ parcelHelpers.export(exports, "tgEpgTooltipp", ()=>tgEpgTooltipp);
 var _tgControlsJs = require("../tgControls.js");
 var _defaultsTooltippJs = require("../../defaults_Tooltipp.js");
 class tgEpgTooltipp extends (0, _tgControlsJs.tgControls) {
-    constructor(mode = "open", props = {}){
-        super(mode, new (0, _defaultsTooltippJs.tgEpgToolTippDefaults)(), props);
+    constructor(mode = "open", defClass = new (0, _defaultsTooltippJs.tgEpgToolTippDefaults)(), props = {}){
+        super(mode, defClass, props);
         var that = this;
         // default Parameter nach Props einlesen
         this["PROPS"] = this._extender({}, this["PROPS"] || {}, {
@@ -5442,42 +5459,43 @@ class tgEpgTooltipp extends (0, _tgControlsJs.tgControls) {
             this.classList.add("hide");
             return;
         }
-        let txt = _template_mapper(this.PROPS.run.template, this.PROPS.run.data.data);
+        let txt = this.template_mapper(this.PROPS.run.template, this.PROPS.run.data.data);
         txt = txt.replaceAll(/<!.+?>/gi, '<div name="empty"></div>');
         this.container.innerHTML = txt;
         this.classList.remove("hide");
         let style = this.calculatePos();
         //console.log(style, this.PROPS.run.data)
-        setStyle(style);
-        function setStyle(sty) {
-            var myKeys = Object.keys(sty);
-            for(let i = 0; i < myKeys.length; i++)that.style[myKeys[i]] = sty[myKeys[i]];
-        }
-        //###############################
-        function _template_mapper(templ, source, map = null) {
-            var mapkeys = map ? Object.keys(map) : Object.keys(source);
-            for (let index of mapkeys){
-                const needle = new RegExp(`<!${map ? map[index][0] : index.toUpperCase()}!>`, "gi");
-                if (needle.test(templ)) {
-                    if (map) for(let p = 1; p < map[index].length; p++){
-                        if (!(map[index][p] in source)) continue;
-                        let txt = source[map[index][p]];
-                        let tpl = templ.replaceAll(needle, txt);
-                        if (tpl != templ) {
-                            templ = tpl;
-                            break;
-                        }
-                    }
-                    else {
-                        let txt = source[index] || "";
-                        templ = templ.replaceAll(needle, txt);
+        this.setStyle(style);
+    }
+    //###############################
+    setStyle(sty) {
+        var myKeys = Object.keys(sty);
+        for(let i = 0; i < myKeys.length; i++)this.style[myKeys[i]] = sty[myKeys[i]];
+    }
+    //###############################
+    template_mapper(templ, source, map = null) {
+        var mapkeys = map ? Object.keys(map) : Object.keys(source);
+        for (let index of mapkeys){
+            const needle = new RegExp(`<!${map ? map[index][0] : index.toUpperCase()}!>`, "gi");
+            if (needle.test(templ)) {
+                if (map) for(let p = 1; p < map[index].length; p++){
+                    if (!(map[index][p] in source)) continue;
+                    let txt = source[map[index][p]];
+                    let tpl = templ.replaceAll(needle, txt);
+                    if (tpl != templ) {
+                        templ = tpl;
+                        break;
                     }
                 }
+                else {
+                    let txt = source[index] || "";
+                    templ = templ.replaceAll(needle, txt);
+                }
             }
-            return templ;
         }
-    //###############################
+        return templ;
     }
+    //###############################
     calculatePos() {
         let style = {
             left: "0px",
@@ -5580,7 +5598,7 @@ class tgEpgToolTippDefaults extends (0, _defaultsCommonJs.tgEpgDefaultsCommon) {
         };
         return props;
     }
-    static get template() {
+    static get styles() {
         var styles = super.styles || "";
         styles = styles + `
 			<style>
@@ -5616,6 +5634,10 @@ class tgEpgToolTippDefaults extends (0, _defaultsCommonJs.tgEpgDefaultsCommon) {
 				}	
 			</style>
 			`;
+        return styles;
+    }
+    static get template() {
+        var styles = this.styles;
         var tmp = styles + `
 			<!-- App -->
 			<div name="container"></div>
@@ -5625,6 +5647,182 @@ class tgEpgToolTippDefaults extends (0, _defaultsCommonJs.tgEpgDefaultsCommon) {
     }
 }
 
-},{"./defaults_Common.js":"3eZWv","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}]},["02s2e","ciLff"], "ciLff", "parcelRequire94c2")
+},{"./defaults_Common.js":"3eZWv","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"6EhGR":[function(require,module,exports) {
+/*
+* tgEPG component
+*
+* Copyright (c) 2020-2021 Thomas Geißenhöner <quietcry@gmx.de>
+* Under MIT License (http://www.opensource.org/licenses/mit-license.php)
+*
+*
+*/ var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "tgEpgInfo", ()=>tgEpgInfo);
+var _defaultsInfoJs = require("../../defaults_Info.js");
+var _tgEpgTooltippJs = require("./tgEpg.tooltipp.js");
+class tgEpgInfo extends (0, _tgEpgTooltippJs.tgEpgTooltipp) {
+    constructor(mode = "open", defClass = new (0, _defaultsInfoJs.tgEpgInfoDefaults)(), props = {}){
+        super(mode, defClass, props);
+        var that = this;
+        // default Parameter nach Props einlesen
+        this["PROPS"] = this._extender({}, this["PROPS"] || {}, {
+            default: {
+                msg: {
+                    log: true,
+                    debug: true,
+                    error: true
+                }
+            },
+            attr: this._extender({}, tgEpgInfo.properties)
+        });
+        this["PROPS"]["run"] = this._extender(this["PROPS"]["default"] || {}, this["PROPS"]["run"] || {}, props);
+        this.app = this.shadowRoot.querySelector('[name="app"]');
+        this.container = this._shadowRoot.querySelector('[name="container"]');
+        this.closeButton = this.container.querySelector(".closeButton");
+        if (this.closeButton) this.closeButton.addEventListener("click", function(ev) {
+            that.classList.add("hide");
+        }, true);
+    }
+    //######################################################################################################################################
+    //
+    //
+    //
+    //######################################################################################################################################
+    static get properties() {
+        let defProps = (0, _defaultsInfoJs.tgEpgInfoDefaults).properties || {};
+        let props = {};
+        let superProps = super.properties || {};
+        props = Object.assign(superProps, defProps, props);
+        return props;
+    }
+    //######################################################################################################################################
+    static get observedAttributes() {
+        let props = Object.keys(tgEpgInfo.properties);
+        return props;
+    }
+    //######################################################################################################################################
+    //
+    //
+    //
+    //######################################################################################################################################
+    attributeChangedCallback(attrName, oldVal, newVal) {
+        if (oldVal === newVal) return;
+        oldVal = oldVal || this.PROPS.paras[attrName];
+        super.attributeChangedCallback(attrName, newVal, oldVal);
+        this.PROPS.paras[attrName] = newVal;
+        attrName;
+    }
+    refresh() {
+        if (!this.calculateRect()) return;
+        var that = this;
+        if (this.PROPS.run.data.task == "mouseleave") {
+            this.classList.add("hide");
+            return;
+        }
+        let txt = this.template_mapper(this.PROPS.run.template, this.PROPS.run.data.data);
+        txt = txt.replaceAll(/<!.+?>/gi, '<div name="empty"></div>');
+        this.container.innerHTML = txt;
+        this.classList.remove("hide");
+        let style = this.calculatePos();
+        //console.log(style, this.PROPS.run.data)
+        this.setStyle(style);
+    }
+    calculatePos() {
+        let client = this.getBoundingClientRect();
+        let pos = this.PROPS.run?.data.pos || null;
+        if (!pos) return false;
+        let rect = this.PROPS.run.Rect;
+        let mouse = this.PROPS.run?.data.mouse || null;
+        let x2 = rect.width / 2;
+        let y2 = rect.height / 2;
+        let top = "0px";
+        let left = "0px";
+        let right = "0px";
+        let bottom = "0px";
+        let style = mouse.x <= x2 ? mouse.y <= y2 ? {
+            left: null,
+            top: null,
+            bottom: bottom,
+            right: right
+        } : {
+            left: null,
+            top: top,
+            bottom: null,
+            right: right
+        } : mouse.y <= y2 ? {
+            left: left,
+            top: null,
+            bottom: bottom,
+            right: null
+        } : {
+            left: left,
+            top: top,
+            bottom: null,
+            right: null
+        };
+        return style;
+    }
+}
+window.customElements.define("tgepg-info", tgEpgInfo);
+
+},{"../../defaults_Info.js":"9zY62","./tgEpg.tooltipp.js":"75Vup","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"9zY62":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "tgEpgInfoDefaults", ()=>tgEpgInfoDefaults);
+var _defaultsTooltippJs = require("./defaults_Tooltipp.js");
+class tgEpgInfoDefaults extends (0, _defaultsTooltippJs.tgEpgToolTippDefaults) {
+    thisIsClass = true;
+    constructor(that){
+        super("open", that);
+        this["PROPS"] = {
+            default: this._extender({}, this["PROPS"].default || {}, {}),
+            run: {
+                template: `
+												<div class="nowrap"><!DATE!> | <!START!> - <!END!></div>
+												<br>
+												<div class="nowrap title"><!TITLE!></div>
+												<br>
+												<div class="nowrap"><!SUBTITLE!></div>
+												<div class="Tab greedyW">
+													<div class="TabRow">
+														<div class="TabCell greedyW"></div>
+														<div class="TabCell">Rec</div>
+														<div class="TabCell closeButton">XXX</div>
+													</div>
+												</div>
+												<hr>
+												<div class=""><!DESCRIPTION!></div>
+												`
+            }
+        };
+    }
+    get properties() {
+        var props = super.properties || {
+            _common: false
+        };
+        return props;
+    }
+    static get styles() {
+        var styles = super.styles || "";
+        styles = styles + `
+			<style>
+			:host
+			{ max-width:40%;}
+			</style>
+			`;
+        return styles;
+    }
+    static get template() {
+        var styles = this.styles || "";
+        var tmp = styles + `
+			<!-- App -->
+			<div name="container"></div>
+			<!-- App Ende-->
+			`;
+        return tmp;
+    }
+}
+
+},{"./defaults_Tooltipp.js":"cWLBY","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}]},["02s2e","ciLff"], "ciLff", "parcelRequire94c2")
 
 //# sourceMappingURL=tgepg-card.js.map

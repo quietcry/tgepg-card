@@ -32,6 +32,7 @@ export class tgEpgProgListDefaults extends tgEpgDefaultsCommon
 			:host
 				{
 				--timeMarkerWidth: 2px;
+				--tgepg-progline-borderheight: 3px;
 				display:inline-block;
 				font-size:12px;
 				overflow-x:auto;
@@ -58,7 +59,7 @@ export class tgEpgProgListDefaults extends tgEpgDefaultsCommon
 				}
 			.Progline
 				{
-				height:100% !important;
+				height:calc( var(--channelRowHeight) - 1 * var( --tgepg-progline-borderheight ) );
 				max-height:100% !important;
 				min-height:100% !important;
 				}
@@ -68,8 +69,8 @@ export class tgEpgProgListDefaults extends tgEpgDefaultsCommon
 				}
 			[name="app"] > .TabRow
 				{
-				border-top: 3px solid black;
-				border-bottom: 3px solid black;
+				border-top: var( --tgepg-progline-borderheight ) solid black;
+				border-bottom: var( --tgepg-progline-borderheight ) solid black;
 				min-height: calc( var(--channelRowHeight) * 1 );
 				max-height: calc( var(--channelRowHeight) * 1 );
 				height: calc( var(--channelRowHeight) * 1 );
