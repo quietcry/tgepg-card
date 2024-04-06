@@ -69,11 +69,30 @@ export class tgEpgCardDefaults extends tgEpgDefaultsCommon
 				top:0px;
 				/*height:100%;*/
 				display:block;
-				--topBarHeight-used: calc( var(--topBarHeight,45px) * 1);
-				--channelRowWidth-used: calc( var(--channelRowWidth,100px) *1);
-				--channelRowHeight-used: calc( var(--channelRowHeight,40px) * 1);
-				--scale-used: calc( var(--scale, 1) * 1);
-				--appHeight-used: calc( var(--appHeight, 100%) * 1);
+
+				--tgepg-topBarHeight: var( --tgepg-topBarHeight-org, 30px );
+				--tgepg-channelRowWidth: var( --tgepg-channelRowWidth-org, 100px );
+				--tgepg-channelRowHeight: var( --tgepg-channelRowHeight-org, 40px );
+				--tgepg-scale: var( --tgepg-scale-org, 1 );
+				--tgepg-appHeight: var( --tgepg-appHeight-org, 100% ) ;
+				--tgepg-bgcolor-primary-dark: var( --dark-primary-color, #0288d1);
+				--tgepg-bgcolor-primary-light: var( --light-primary-color, #b3e5fc);
+				--tgepg-textcolor-primary-dark: var( --primary-text-color, #212121);
+				--tgepg-textcolor-primary-light: var( --primary-text-color, #212121);
+				--tgepg-bgcolor-secondary-dark: var( --dark-secondary-color, #727272);
+				--tgepg-bgcolor-secondary-light: var( --light-secondary-color, #bdbdbd);
+				--tgepg-textcolor-secondary-dark: var( --primary-text-color, #212121);
+				--tgepg-textcolor-secondary-light: var( --primary-text-color, #212121);
+				--tgepg-bgcolor-channel-dark: var( --dark-grey-color, #0288d1);
+				--tgepg-bgcolor-channel-light: var( --blue-grey-color, #0288d1);
+				--tgepg-textcolor-channel-dark: var( --text-primary-color, #ffffff);
+				--tgepg-textcolor-channel-light: var( --text-primary-color, #ffffff);
+
+				--tgepg-color-divider: var( --divider-color, rgba(0, 0, 0, 0.12));
+				--tgepg-width-timeMarker: 2px;
+				--tgepg-color-timeMarker: var(--pink-color, red);
+				--tgepg-borderheight-channelline: 3px;
+				--tgepg-bordercolor-channelline: var( --input-outlined-idle-border-color, rgba(0, 0, 0, 0.38));
 
 				}
 			div
@@ -92,14 +111,14 @@ export class tgEpgCardDefaults extends tgEpgDefaultsCommon
 				{
 				display: grid;
 				grid-auto-rows: 1fr;
-				grid-template-columns: var(--channelRowWidth-used) 1fr;
-				grid-template-rows: var(--topBarHeight-used) calc(100% - var(--topBarHeight-used));
+				grid-template-columns: var(--tgepg-channelRowWidth) 1fr;
+				grid-template-rows: var(--tgepg-topBarHeight) calc(100% - var(--tgepg-topBarHeight));
 				gap: 0px 0px;
 				grid-template-areas:
 					"superbutton timeBar"
 					"epgOutBox epgOutBox";
 				width: 100%;
-				height: var(--appHeight-used);
+				height: var(--tgepg-appHeight);
 
 				}
 			.superbutton { grid-area: superbutton; }
@@ -119,7 +138,7 @@ export class tgEpgCardDefaults extends tgEpgDefaultsCommon
 				background-color: lightgray;
 				white-space: nowrap;
 				overflow: hidden;
-				height: var( --topBarHeight )
+				height: var( --tgepg-topBarHeight )
 				}
 			[name="superbutton"]
 				{
@@ -131,7 +150,6 @@ export class tgEpgCardDefaults extends tgEpgDefaultsCommon
 				background-color: pink;
 				width:100%;
 				height:100%;
-				/*overflow-y: hidden;*/
 				overflow-x: hidden;
 				}
 
@@ -139,24 +157,19 @@ export class tgEpgCardDefaults extends tgEpgDefaultsCommon
 				{
 				display: grid;
 				grid-auto-rows: 1fr;
-				grid-template-columns: var(--channelRowWidth, 99px) 1fr;
+				grid-template-columns: var( --tgepg-channelRowWidth ) 1fr;
 				grid-template-rows: minmax(min-content, max-content) ;
 				gap: 0px 0px;
 				grid-template-areas:
 					"channelBox programBox";
 				width:100%;
-				/*position: absolute;*/
 				height:100%;
-				grid-auto-flow: dense;*/
+				grid-auto-flow: dense;
 				}
 			[name="channelBox"]
 				{
-				/*position: absolute;*/
 				background-color: lightblue;
 				position:relative;
-				/*
-				overflow-x:hidden;
-				overflow-y:visible !important;*/
 				}
 			[name="programBox"]
 				{
@@ -204,13 +217,13 @@ export class tgEpgCardDefaults extends tgEpgDefaultsCommon
 			tg-epg-timebar
 				{
 				--timeBarBorder: 1px solid black;
-				--timeBarHeight: var(--topBarHeight, 50px);
-				--timeBarScale:  var(--scale, 0.1);
+				--timeBarHeight: var( --tgepg-topBarHeight );
+				--timeBarScale:  var( --tgepg-scale );
 				}
 			tg-epg-proglist, tg-epg-channellist
 				{
-				--channelLineHeight: var(--channelRowHeight, 50px);
-				--channelLineScale:  var(--scale, 0.1);
+				--channelLineHeight: var( --channelRowHeight);
+				--channelLineScale:  var( --tgepg-scale);
 				}
 
 			</style>

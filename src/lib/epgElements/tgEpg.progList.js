@@ -49,39 +49,7 @@ export class tgEpgProgList extends channelProgListBasis
 		// data handler init
 		this.epgData={};
 
-
-
-
-		//this.me=new tgEpgHelper(false);
-
-		//this.app = this.shadowRoot.querySelector('[name="app"]');
-		// this.buttonCell = this.shadowRoot.querySelector('[name="buttonCell"]');
-
-		// this.channelBox = this.shadowRoot.querySelector('[name="channelBox"]');
-		// this.programBox = this.shadowRoot.querySelector('[name="programBox"]');
-		// this.timeBar = this.shadowRoot.querySelector('[name="timeBar"]');
-		// this.timeRow = this.shadowRoot.querySelector('[name="timeRow"]');
 		this.timeMarker = this._shadowRoot.querySelector('[name="timemarker"]');
-		// this.superButton = that.shadowRoot.querySelector('#superbutton');
-		// this.floatingMenu = that.shadowRoot.querySelector('[name="app"]>tg-floatingMenu');
-
-//console.log (this.app, this.timeMarker)
-
-
-/*
-		let body=document.querySelector("body");
-													`<div name="EpgInfoBox" class="hide"></div>`
-		this.EpgInfoBox = this.shadowRoot.querySelector('[name="EpgInfoBox"]');
-
- */
-
-
-		// this._writeOptions(this.PROPS.defaults._storageKey, this.PROPS.set);
-		//this._debug("JSON", this.readOptions(this.PROPS.defaults._storageKey))
-		//this.PROPS.run.topElements = [this.app, this.icon];
-
-		//this._log("construction ended", "props:",this.PROPS, "me:", this);
-		//this._debug("constructor - constructed");
 		this.init()
 		}
 
@@ -223,7 +191,7 @@ export class tgEpgProgList extends channelProgListBasis
 			}
 		let now=Math.floor(new Date() / 1000);
 		let offset=(now - this.PROPS.attr.timelinestart )
-		this.timeMarker.style.setProperty('--timeMarkerOffset', offset+"px");
+		this.timeMarker.style.setProperty('--tgepg-timeMarkerOffset', offset+"px");
 		that.timeMarker.classList.remove("hide")
 
 		if ((! this.timeMarker.hasAttribute("hasTimer")) || (parseInt(this.timeMarker.getAttribute("hasTimer")) !== 1) )
@@ -260,7 +228,8 @@ export class tgEpgProgList extends channelProgListBasis
 		let props= 	{
 					timelinestart:null,
 					enableTimemarker:false,
-					enableToolTipp:false
+					enableToolTipp:false,
+					enableEpgInfo:false
 					};
 		let superProps=super.properties||{};
 		props=Object.assign(superProps,defProps,props);
@@ -299,99 +268,13 @@ export class tgEpgProgList extends channelProgListBasis
 			case "enableToolTipp":
 				console.log("enableToolTipp!", newVal)
 				break;
+			case "enableEpgInfo":
+				console.log("enableEpgInfo!", newVal)
+				break;
 			default:
 				break;
 			}
 		}
-
-	//######################################################################################################################################
-	//init()
-	//prüft die Umgebung und passt Parameter entsprechend an
-	//
-	//######################################################################################################################################
-	// addLine(id, rawFilter=[], item={}, that, html="", shown=true)
-	// 	{
-	// 	////console.debug("addline", html)
-	// 	var that=this
-	// 	id="progline_"+id
-	// 	var filter=rawFilter.join(",")
-	// 	var row =this.app.querySelector(`#${id}`)
-	// 	if (! row)
-	// 		{
-	// 		row=this.htmlToElement(	`<div class="TabRow" filter="${filter}" id="${id}" >
-	// 									<div class="TabCell">
-	// 										<div class="Tab">
-	// 											<div name="container" class="TabRow">
-	// 												<tgepg-progitem class="TabCell" span="0" name="startplaceholder"><tgepg-progitem>
-	// 												<tgepg-progitem class="TabCell" span="0" name="endplaceholder"><tgepg-progitem>
-	// 											</div>
-	// 										</div>
-	// 									</div>
-	// 								</div>
-	// 								`)
-	// 		this.app.appendChild(row);
-	// 		}
-	// 	if (!shown) row.classList.add("hide")
-	// 	row=row.querySelector('[name="container"]')
-
-	// 	var cells=row.querySelectorAll('tgepg-progitem:not([usedfor])')
-	// 	if (cells.length === 0)
-	// 		{
-	// 		row.innerHTML=html
-	// 		}
-	// 	else
-	// 		{
-	// 		var newCells=[]
-	// 		var cell=cells[cells.length-1]
-	// 		cell.setAttribute("span",cell.getAttribute("duration"))
-	// 		this.htmlToElements(html).forEach(element => { if (that.getType(element, "nodeElement")) newCells.push(element) });
-	// 		newCells.forEach(newCell =>
-	// 			{
-	// 			var start=parseInt(cell.getAttribute("start"))
-	// 			var end=parseInt(cell.getAttribute("end"))
-	// 			var newstart=parseInt(newCell.getAttribute("start"))
-	// 			var newend=parseInt(newCell.getAttribute("end"))
-	// 			var span=newstart-end
-	// 			if ( span === 0 )
-	// 				{
-	// 				cell.after(newCell)
-	// 				cell=newCell
-	// 				}
-	// 			else if ( span > 0 )
-	// 				{
-	// 				cell.after(this.htmlToElement(`
-	// 				<tg-epg-progitem class="TabCell"
-	// 				span="${span}"
-	// 				start="${end}"
-	// 				end="${newstart}"
-	// 				channelid="${id}"
-	// 				id="${id}_${end}"
-	// 					></tg-epg-progitem>`
-	// 				), newCell)
-	// 				cell=newCell
-	// 				}
-	// 			else if (( span < 0) && (newend <= end))
-	// 				{
-
-	// 				}
-	// 			else if (( span < 0) && (newend > end))
-	// 				{
-	// 				cell.setAttribute("span", newstart-start)
-	// 				cell=newCell
-	// 				}
-
-	// 			})
-	// 		}
-	// 	cells=row.querySelectorAll('tg-epg-progitem:not([usedfor]):not([status])')
-	// 	cells.forEach(cell =>
-	// 		{
-	// 		that.transferPROPS(that, cell)
-	// 		})
-
-
-
-	// 	return
-	// 	}
 
 	// //######################################################################################################################################
 	// //
@@ -407,111 +290,11 @@ export class tgEpgProgList extends channelProgListBasis
 		 	}
 		}
 	//######################################################################################################################################
-	//
-	//
-	//
-	//######################################################################################################################################
-	// attributeChangedCallback(attrName, oldVal, newVal)
-	// 	{
-	// 	if ( (! newVal) || (! this.PROPS.attr.hasOwnProperty(attrName)) || (this.PROPS.attr[attrName]===newVal)) return;
-	// 	console.log("attributeChangedCallback")
-
-
-	// 	oldVal=oldVal || this.PROPS.paras[attrName];
-	// 	if (typeof super.attributeChangedCallback == "function")
-	// 		{
-	// 		super.attributeChangedCallback(attrName, newVal, oldVal );
-	// 		}
-	// 	//this._debug("change Attribute "+attrName, "from", oldVal, "to" , newVal);
-	// 	this.PROPS.paras[attrName]=newVal;
-	// 	switch (attrName)
-	// 		{
-	// 		case "timerowheight":
-	// 			//this.timeRow.style.height=parseInt(newVal)+"px";
-	// 			break;
-	// 		case "channelfilter":
-	// 			this.setFilter(newVal)
-	// 			break;
-	// 		case "data":
-	// 			this.PROPS.paras["dataref"]=newVal;
-	// 			this.dataHandler.getData(newVal);
-	// 			break;
-	// 		default:
-	// 			break;
-	// 		}
-	// 	}
-	//######################################################################################################################################
 	//setter & getter
 	//
 	//
 	//######################################################################################################################################
-	// get design_timeFrameStart()
-	// 	{
-	// 	////console.debug("render Appp getter", this.PROPS.run)
-	// 	return this.PROPS.run.timeFrameStart||null;
-	// 	}
-	// set design_timeFrameStart(val)
-	// 	{
-	// 	// if (this.PROPS.run.timeFrameStart != val)
-	// 	// 	{
-	// 	// 	this.PROPS.run["timeFrameStart"]=val;
-	// 	// 	}
-	// 	}
-	// get design_timeFrameEnd()
-	// 	{
-	// 	return this.PROPS.run.timeFrameEnd||null;
-	// 	}
-	// set design_timeFrameEnd(val)
-	// 	{
-	// 	// if (this.PROPS.run.timeFrameEnd != val)
-	// 	// 	{
-	// 	// 	this.PROPS.run["timeFrameEnd"]=val;
-	// 	// 	}
-	// 	}
-	// get design_SpanTime()
-	// 	{
-	// 	return this.PROPS.run.SpanTime||null;
-	// 	}
-	// set design_SpanTime(val)
-	// 	{
-	// 	if (this.PROPS.run.SpanTime != val)
-	// 		{
-	// 		this.PROPS.run["SpanTime"]=val;
-	// 		}
-	// 	}
-	// get design_SpanTimeAll()
-	// 	{
-	// 	return this.PROPS.run.SpanTimeAll||null;
-	// 	}
-	// set design_SpanTimeAll(val)
-	// 	{
-	// 	if (this.PROPS.run.SpanTimeAll != val)
-	// 		{
-	// 		this.PROPS.run["SpanTimeAll"]=val;
-	// 		}
-	// 	}
-	// get design_PastOffsetTime()
-	// 	{
-	// 	return this.PROPS.run.PastOffsetTime||null;
-	// 	}
-	// set design_PastOffsetTime(val)
-	// 	{
-	// 	if (this.PROPS.run.PastOffsetTime != val)
-	// 		{
-	// 		this.PROPS.run["PastOffsetTime"]=val;
-	// 		}
-	// 	}
-	// get now()
-	// 	{
-	// 	return this.PROPS.run.now||null;
-	// 	}
-	// set now(val)
-	// 	{
-	// 	if (this.PROPS.run.now != val)
-	// 		{
-	// 		this.PROPS.run["now"]=val;
-	// 		}
-	// 	}
+
 	get enableToolTipp()
 		{	
 		return this.PROPS.attr.enableToolTipp||null;
@@ -519,6 +302,14 @@ export class tgEpgProgList extends channelProgListBasis
 	set enableToolTipp(val)
 		{
 		this.attributeChangedCallback("enableToolTipp", this.PROPS.attr.enableToolTipp||null, val)
+		}
+	get enableEpgInfo()
+		{	
+		return this.PROPS.attr.enableEpgInfo||null;
+		}
+	set enableEpgInfo(val)
+		{
+		this.attributeChangedCallback("enableEpgInfo", this.PROPS.attr.enableEpgInfo||null, val)
 		}
 	get enableTimemarker()
 		{	
@@ -548,254 +339,7 @@ export class tgEpgProgList extends channelProgListBasis
 
 //##################################################################
 
-	// get epgPastSpanHours()
-	// 	{
-	// 	return this.PROPS.run.epgPastSpanHours||null;
-	// 	}
-	// set epgPastSpanHours(val)
-	// 	{
-	// 	if (this.PROPS.run.epgPastSpanHours != val)
-	// 		{
-	// 		this.PROPS.run["epgPastSpanHours"]=val;
-	// 		}
-	// 	}
 
-	// get epgFutureSpanHoursAll()
-	// 	{
-	// 	return this.PROPS.run.epgFutureSpanHoursAll||null;
-	// 	}
-	// set epgFutureSpanHoursAll(val)
-	// 	{
-	// 	if (this.PROPS.run.epgFutureSpanHoursAll != val)
-	// 		{
-	// 		this.PROPS.run["epgFutureSpanHoursAll"]=val;
-	// 		}
-	// 	}
-	// get scale()
-	// 	{
-	// 	return this.PROPS.run.scale||null;
-	// 	}
-	// set scale(val)
-	// 	{
-	// 	if (this.PROPS.run.scale != val)
-	// 		{
-	// 		this.PROPS.run["scale"]=val;
-	// 		}
-	// 	}
-
-
-
-	// render()
-	// 	{
-	// 	var that=this
-	// 	let selector='.TabRow[filter] [name="container"]';
-	// 	var rows=this.app.querySelectorAll(`${selector}`)
-	// 	const styles=getComputedStyle(this)
-	// 	this.PROPS.run["scale"]=parseFloat(styles.getPropertyValue('--scale'))||0
-
-	// 	rows.forEach(function(row)
-	// 		{
-	// 		var cells=row.querySelectorAll('tg-epg-progitem[usedfor="emptyStartCell"],tg-epg-progitem[usedfor="emptyEndCell"]')
-	// 		cells.forEach(function(cell)
-	// 			{
-	// 			cell.remove()
-	// 			})
-	// 		})
-	// 	selector=`${selector} > tg-epg-progitem`
-	// 	this.PROPS.run["timeFrameStart"]=getMinMaxTime	("min",
-	// 													this.PROPS.run.now -this.PROPS.run.epgPastSpanHours*3600,
-	// 													`${selector}:first-of-type`
-	// 													)
-	// 	this.PROPS.run["timeFrameEnd"]	=getMinMaxTime	("max",
-	// 													this.PROPS.run.now + (this.PROPS.run.epgFutureSpanHours+this.PROPS.run.epgFutureSpanHoursAll)*3600,
-	// 													`${selector}:last-of-type`
-	// 													)
-	// 	rows.forEach(function(row)
-	// 		{
-	// 		var firstCell=row.querySelector('tg-epg-progitem:not([usedfor]):first-of-type')
-	// 		while ((firstCell) && (parseInt(firstCell.getAttribute("end")) < that.PROPS.run.timeFrameStart))
-	// 			{
-	// 			firstCell.remove()
-	// 			firstCell=row.querySelector('tg-epg-progitem:not([usedfor]):first-of-type')
-	// 			}
-
-	// 		var lastCell=row.querySelector('tg-epg-progitem:not([usedfor]):last-of-type')
-	// 		while ((lastCell) && (parseInt(lastCell.getAttribute("start")) > that.PROPS.run.timeFrameEnd))
-	// 			{
-	// 			lastCell.remove()
-	// 			lastCell=row.querySelector('tg-epg-progitem:not([usedfor]):last-of-type')
-	// 			}
-	// 		firstCell=row.querySelector('tg-epg-progitem:not([usedfor]):first-of-type')
-	// 		lastCell=row.querySelector('tg-epg-progitem:not([usedfor]):last-of-type')
-	// 		if (firstCell)
-	// 			{
-	// 			firstCell.setAttribute("span", parseInt(firstCell.getAttribute("duration")) )
-	// 			lastCell.setAttribute("span", parseInt(lastCell.getAttribute("duration")) )
-
-	// 			let x=parseInt(firstCell.getAttribute("start"))
-	// 			let y=that.PROPS.run.timeFrameStart-x
-	// 			if (y>=0)
-	// 				{
-	// 				firstCell.setAttribute("span", parseInt(firstCell.getAttribute("span")-y) )
-	// 				y=0
-	// 				}
-	// 			else
-	// 				{
-	// 				y=-1*y
-	// 				}
-	// 			row.prepend(that.htmlToElement	(
-	// 				`
-	// 				<tg-epg-progitem usedfor="emptyStartCell" class="usedfor" span="${y}">
-	// 				</tg-epg-progitem>
-	// 				`))
-	// 			x=parseInt(lastCell.getAttribute("end"))
-	// 			y=x-that.PROPS.run.timeFrameEnd
-	// 			if (y>=0)
-	// 				{
-	// 				lastCell.setAttribute("span", parseInt(firstCell.getAttribute("span")-y) )
-	// 				y=0
-	// 				}
-	// 			else
-	// 				{
-	// 				y=-1*y
-	// 				}
-	// 		// 	////console.debug("proglistrender", y, new Date(that.PROPS.run.timeFrameStart*1000), new Date(that.PROPS.run.timeFrameEnd*1000))
-
-	// 			row.append(that.htmlToElement	(
-	// 				`
-	// 				<tg-epg-progitem usedfor="emptyEndCell"  class="usedfor" span="${y}">
-	// 				</tg-epg-progitem>
-	// 				`
-	// 				))
-	// 			}
-	// 		})
-	// 	this.initTimemarker()
-
-	// 	function getMinMaxTime(minOrMax="min", border, selector)
-	// 		{
-	// 		var cells=that.app.querySelectorAll(selector)
-	// 		// //console.debug("proglistrenderxxx", that.app, minOrMax, cells.length)
-
-	// 		var pos=null
-	// 		cells.forEach(function(cell)
-	// 			{
-	// 			if (minOrMax === "min")
-	// 				{
-	// 				let x=parseInt(cell.getAttribute("start"))
-	// 				pos=( (pos === null) || (pos > x))?x:pos
-	// 				pos=(pos<border)?border:pos
-	// 				}
-	// 			else
-	// 				{
-	// 				let x=parseInt(cell.getAttribute("end"))
-	// 				pos=( (pos === null) || (pos < x))?x:pos
-	// 				pos=(pos > border)?border:pos
-	// 				// //console.debug("proglistrenderx", new Date(border*1000), new Date(pos*1000))
-
-	// 				}
-	// 			})
-	// 		return Math.round(new Date(((pos === null)?border:pos)*1000).floorHours().getTime()/1000)
-	// 		}
-
-	// 	}
-	// addEmptyCellsOnStartAndEnd(row, start, end)
-	// 	{
-	// 	var sCell=row.querySelector('tg-epg-progitem[usedfor="emptyStartCell"]')
-	// 	if (! sCell)
-	// 		{
-	// 		sCell=this.htmlToElement	(
-	// 								`
-	// 								<tg-epg-progitem usedfor="emptyStartCell">
-	// 								</tg-epg-progitem>
-	// 								`
-	// 								)
-	// 		row.prepend(sCell)
-	// 		}
-	// 	var eCell=row.querySelector('tg-epg-progitem[usedfor="emptyEndCell"]')
-	// 	if (! eCell)
-	// 		{
-	// 		eCell=this.htmlToElement	(
-	// 								`
-	// 								<tg-epg-progitem usedfor="emptyEndCell">
-	// 								</tg-epg-progitem>
-	// 								`
-	// 								)
-	// 		row.append(eCell)
-	// 		}
-	// 	var brother =sCell.nextElementSibling
-	// 	if (brother)
-	// 		{
-	// 		let nextStart=parseInt(brother.getAttribute("start") || end)
-	// 		let duration=nextStart-start
-	// 		sCell.setAttribute("duration", duration)
-	// 		sCell.setAttribute("start", start)
-	// 		sCell.setAttribute("end", nextStart)
-	// 		}
-	// 	//console.debug("addEmptyCellsOnStartAndEnd", start, end, row,"\n", sCell,"\n", brother)
-
-	// 	var brother =eCell.previousElementSibling
-	// 	if (brother)
-	// 		{
-	// 		let beforeEnd=parseInt(brother.getAttribute("end") || end)
-	// 		let duration=end - beforeEnd
-	// 		eCell.setAttribute("duration", duration)
-	// 		eCell.setAttribute("start", start)
-	// 		eCell.setAttribute("end", beforeEnd)
-	// 		}
-	// 	//console.debug("addEmptyCellsOnStartAndEnd","\n", brother)
-
-	// 	// 	let duration=parseInt(item.nextSibling.getAttribute("start"))-start
-
-
-
-	// 	// var items=this.shadowRoot.querySelectorAll('tg-epg-progitem[usedfor="emptyStartCell"]:not([duration])');
-	// 	// items.forEach((item) =>
-	// 	// 	{
-	// 	// 	let duration=parseInt(item.nextSibling.getAttribute("start"))-start
-	// 	// 	item.setAttribute("duration", duration)
-	// 	//   	});
-	// 	// items=this.shadowRoot.querySelectorAll('tg-epg-progitem');
-	// 	// items.forEach((item) =>
-	// 	// 	{
-	// 	// 	item.supermaster=this._supermaster
-	// 	// 	});
-	// 	// this.drawStart=start
-	// 	}
-
-
-	//#########################################################################################################
-	//## refreshAppSizeAfterResizeOrInit()
-	//##
-	//##
-	//##
-	//#########################################################################################################
-	// resize(scale)
-	// 	{
-	// 	var oldScale=parseFloat(this.PROPS.run.scale)
-	// 	var oldScroll=parseFloat(this.scrollLeft)
-	// 	var timeOffset=oldScroll/oldScale
-	// 	this.PROPS.run.scale=scale
-	// 	if 	(this.PROPS.run.scale !== oldScale)
-	// 		{
-	// 		var progItems=this.shadowRoot.querySelectorAll("tg-epg-progitem")
-	// 		progItems.forEach(item =>
-	// 			{
-	// 			item.setAttribute("scale", this.PROPS.run.scale)
-	// 			})
-	// 		this.scrollLeft=timeOffset*scale
-	// 		this.initTimemarker()
-	// 		}
-	// 	}
-
-	//#########################################################################################################
-	//##
-	//##
-	//##
-	//##
-	//#########################################################################################################
-
-	//############################################################################################################################################
-	//############################################################################################################################################
 	}
 
 window.customElements.define('tgepg-proglist', tgEpgProgList);

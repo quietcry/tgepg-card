@@ -30,9 +30,9 @@ export class tgEpgTimebarDefaults extends tgEpgDefaultsCommon
 						:host
 							{
 							--timeBarBorder: 1px solid black;
-							--timeBarCellHeight: calc( var( --topBarHeight, 24px ) / 5 );
+							--timeBarCellHeight: calc( var( --tgepg-topBarHeight) / 5 );
 							display:inline-block;
-							height:var( --topBarHeight )  !important;
+							height:var( --tgepg-topBarHeight )  !important;
 							}
 						[name="app"]
 							{
@@ -44,15 +44,15 @@ export class tgEpgTimebarDefaults extends tgEpgDefaultsCommon
 							}
 						[name="digitline"]
 							{
-							height:calc( var(--timeBarCellHeight) * 1) !important;
-							min-height:calc( var(--timeBarCellHeight) * 1) !important;
-							max-height:calc( var(--timeBarCellHeight) * 1) !important;
+							height:var(--timeBarCellHeight) !important;
+							min-height: var(--timeBarCellHeight)  !important;
+							max-height: var(--timeBarCellHeight) !important;
 							}
 						[name="digitline"] .TabCell .TabCell
 							{
 							vertical-align: middle;
 							text-align:center;
-							font-size: min(calc( var(--timeBarCellHeight) * 2), 12px);
+							font-size: min( var(--timeBarCellHeight) * 2), 12px);
 							}
 						[name="digitline"] .TabCell .TabCell:not(:first-child)
 							{
@@ -111,27 +111,27 @@ export class tgEpgTimebarDefaults extends tgEpgDefaultsCommon
 							}				
 						.cellwidth1
 							{
-							width:		calc( var( --scale , 1 ) * 15 * 60 * 1px) !important;
-							min-width: 	calc( var( --scale , 1 ) * 15 * 60 * 1px) !important;
-							max-width: 	calc( var( --scale , 1 ) * 15 * 60 * 1px) !important;
+							width:		calc( var( --tgepg-scale  ) * 15 * 60 * 1px) !important;
+							min-width: 	calc( var( --tgepg-scale  ) * 15 * 60 * 1px) !important;
+							max-width: 	calc( var( --tgepg-scale  ) * 15 * 60 * 1px) !important;
 							}
 						.cellwidth2
 							{
-							width:		calc( var( --scale , 1 ) * 15 * 60 * 2px) !important;
-							min-width: 	calc( var( --scale , 1 ) * 15 * 60 * 2px) !important;
-							max-width: 	calc( var( --scale , 1 ) * 15 * 60 * 2px) !important;
+							width:		calc( var( --tgepg-scale  ) * 15 * 60 * 2px) !important;
+							min-width: 	calc( var( --tgepg-scale  ) * 15 * 60 * 2px) !important;
+							max-width: 	calc( var( --tgepg-scale  ) * 15 * 60 * 2px) !important;
 							}
 						.cellwidth4
 							{
-							width:		calc( var( --scale , 1 ) * 15 * 60 * 4px) !important;
-							min-width: 	calc( var( --scale , 1 ) * 15 * 60 * 4px) !important;
-							max-width: 	calc( var( --scale , 1 ) * 15 * 60 * 4px) !important;
+							width:		calc( var( --tgepg-scale  ) * 15 * 60 * 4px) !important;
+							min-width: 	calc( var( --tgepg-scale  ) * 15 * 60 * 4px) !important;
+							max-width: 	calc( var( --tgepg-scale  ) * 15 * 60 * 4px) !important;
 							}
 						[name="digitline"]:not(.free) .TabCell .TabCell
 							{
 							vertical-align: middle;
 							text-align:center;
-							font-size: min(calc( var(--timeBarLineHeight) * 2), 12px);
+							font-size: min(calc( var(--tgepg-timeBarLineHeight) * 2), 12px);
 							}
 						[name="digitline"].free
 							{
@@ -144,7 +144,7 @@ export class tgEpgTimebarDefaults extends tgEpgDefaultsCommon
 							{
 							vertical-align: middle;
 							text-align:center;
-							font-size: clamp(10px , var(--timeBarLineHeight) , 20px);
+							font-size: clamp(10px , var(--tgepg-timeBarLineHeight) , 20px);
 							}
 								
 						</style>

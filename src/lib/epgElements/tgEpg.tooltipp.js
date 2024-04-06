@@ -109,7 +109,8 @@ export class tgEpgTooltipp extends tgControls
 		this.container.innerHTML=txt	
 		this.classList.remove("hide")
 		let style=this.calculatePos()
-		
+		style["position"]="absolute"
+
 		//console.log(style, this.PROPS.run.data)
 		this.setStyle(style)
 		}
@@ -182,7 +183,7 @@ export class tgEpgTooltipp extends tgControls
 	calculateRect()
 		{
 		if (this.PROPS.run.Rect) return true	
-		let host=this.parentNode
+		let host=(this.parentNode instanceof ShadowRoot)?this.getRootNode().host:this.parentNode
 		if (! host)	return false
 		this.PROPS.run["host"]=host
 		if (this._getType(this.PROPS.run.master, "string")) this.PROPS.run.master=this._getMasterElement(this.PROPS.run.master)

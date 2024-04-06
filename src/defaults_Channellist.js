@@ -49,36 +49,33 @@ export class tgEpgChannelListDefaults extends tgEpgDefaultsCommon
 						background-color: gray;
 						display:inline-block;
 						position:relative;
-						width: var(--channelRowWidth-used);
-						min-width: var(--channelRowWidth-used);
-						max-width: var(--channelRowWidth-used);
+						width: var(--tgepg-channelRowWidth);
+						min-width: var(--tgepg-channelRowWidth);
+						max-width: var(--tgepg-channelRowWidth);
 						}
 					.TabRow
 						{
-						height: var(--channelRowHeight-used);
-						min-height: var(--channelRowHeight-used);
-						max-height: var(--channelRowHeight-used);
+						height: var(--tgepg-channelRowHeight);
+						min-height: var(--tgepg-channelRowHeight);
+						max-height: var(--tgepg-channelRowHeight);
 						}
 					.TabCell
 						{
 						vertical-align: middle;
 						text-align:left;
-						border-top: 3px solid black;
-						border-bottom: 3px solid black;
-			
+						border-top: var(--tgepg-borderheight-channelline) solid var(--tgepg-bordercolor-channelline);
+						border-bottom: var(--tgepg-borderheight-channelline) solid var(--tgepg-bordercolor-channelline);					
 						}
 					.TabRow:nth-child(even) .TabCell
 						{
-						background-color: green;
-						color: red;
+						background-color: var(--tgepg-bgcolor-channel-dark);
+						color: var(--tgepg-textcolor-channel-dark);
 						}
 					.TabRow:nth-child(odd) .TabCell
 						{
-						background-color: blue;
-						color: yellow;
-						}
-
-			
+						background-color: var(--tgepg-bgcolor-channel-light);
+						color: var(--tgepg-textcolor-channel-light);
+						}			
 						</style>
 						`
 		let html =  `${styles}

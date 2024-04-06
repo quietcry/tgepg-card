@@ -98,7 +98,7 @@ export class tgEpgCard extends tgControls
 		this.addEventListener("rotate", refreshMe)
 		this.dependedApps=[]
 		this.doQueryElements()
-
+		this.PROPS.run["tooltippmaster"]=this
 		function refreshMe(event)
 			{
 			that.refresh(event.type)	
@@ -146,7 +146,7 @@ export class tgEpgCard extends tgControls
 		let height=parseInt(run.appHeight)||null
 		if (height && height > 0 )
 			{
-			this.style.setProperty('--appHeight', `${height}px`);
+			this.style.setProperty('--tgepg-appHeight-org', `${height}px`);
 			}
 		run["now"]= Math.floor(new Date() / 1000);
 		if ( run.min && run.max)
@@ -408,6 +408,7 @@ export class tgEpgCard extends tgControls
 			}
 		if (["click", "dblclick"].includes(details.task) && this.epgInfo && this._enable_epgInfo)
 			{
+			console.log("manageEPGInfoEvent", details)
 			this.epgInfo.data=event.detail	
 			}
 		}		
@@ -426,7 +427,8 @@ export class tgEpgCard extends tgControls
 		if (this._enable_channelList)	activateChannellist.call(this)
 		if (this._enable_progList)		activateProglist.call(this)
 		if (this._enable_timemarker)    activateTimemarker.call(this)
-		if (this._enable_tooltipp || this._enable_epgInfo)    	activateToolTipp.call(this)
+		if (this._enable_tooltipp )    	activateToolTipp.call(this)
+		if (this._enable_epgInfo)    	activateEpgInfo.call(this)
 
 
 		let viewport=document.documentElement;
@@ -436,28 +438,46 @@ export class tgEpgCard extends tgControls
 		this.PROPS.run["states"]["constructed"]=true
 		return;
 		
-		function _connectToInfoTooltipp(needle)
+		function _connectToInfoTooltipp(needle, master , shadow=true)
 			{
-			let elem=that.epgOuterBox.querySelector(needle);
+			let elem=master.querySelector(needle);
 			if (! elem)
 				{
 				elem=document.createElement(needle);
 				elem.classList.add("hide");
 				elem.setAttribute("name", needle);
-				that.epgOuterBox.appendChild(elem);
-				elem.master=that.epgOuterBox
+				if (shadow && master._shadowRoot)
+					{
+					master._shadowRoot.appendChild(elem);
+					}
+				else
+					{
+					master.appendChild(elem);
+					}					
+				elem.master=master
 				elem.restrictions={left:that.channelBox.getBoundingClientRect().width}
+				if (!that.PROPS.run["toolTippListener"])
+					{
+					that.PROPS.run["toolTippListener"]=true	
+					master.addEventListener("userInteraction", function(ev){that.manageEPGInfoEvent.call(that,ev)}, false);	
+					}
 				}
 			return elem
 			}
 		function activateToolTipp()
 			{
-			this.progListApp.enableToolTipp = this._enable_tooltipp || this._enable_epgInfo
-			this.epgTooltipp=_connectToInfoTooltipp('tgepg-tooltipp');
-			this.epgInfo=_connectToInfoTooltipp('tgepg-info');			
-			if (this._enable_tooltipp || this._enable_epgInfo)
+			this.progListApp.enableToolTipp = this._enable_tooltipp
+			if (this._enable_tooltipp)
 				{
-				this.epgOuterBox.addEventListener("userInteraction", function(ev){that.manageEPGInfoEvent.call(that,ev)}, false);	
+				this.epgTooltipp=_connectToInfoTooltipp('tgepg-tooltipp', this);
+				}
+			}
+		function activateEpgInfo()
+			{
+			this.progListApp.enableEpgInfo = this._enable_epgInfo
+			if (this._enable_epgInfo)
+				{
+				this.epgInfo=_connectToInfoTooltipp('tgepg-info', this);			
 				}
 			}
 		function activateTimemarker()
@@ -587,10 +607,10 @@ export class tgEpgCard extends tgControls
 	setCssProps(profile)
 		{
 		//console.warn(profile)	
-		this.style.setProperty('--topBarHeight', parseInt(profile.topBarHeight)+"px");
-		this.style.setProperty('--channelRowWidth', parseInt(profile.channelRowWidth)+"px");
-		this.style.setProperty('--channelRowHeight', parseInt(profile.channelRowHeight)+"px");
-		this.style.setProperty('--scale', parseFloat(profile.scale));
+		this.style.setProperty('--tgepg-topBarHeight-org', parseInt(profile.topBarHeight)+"px");
+		this.style.setProperty('--tgepg-channelRowWidth-org', parseInt(profile.channelRowWidth)+"px");
+		this.style.setProperty('--tgepg-channelRowHeight-org', parseInt(profile.channelRowHeight)+"px");
+		this.style.setProperty('--tgepg-scale-org', parseFloat(profile.scale));
 		}
 	//#########################################################################################################
 	//## renderSubApp()
@@ -787,7 +807,22 @@ export class tgEpgCard extends tgControls
 		// 	console.info("sendDataToWorker", "no updates")	
 		// 	return	
 		// 	}
-		let master=(this.epgOuterBox)?`[name=\"${this.epgOuterBox.getAttribute("name")}\"]`:false
+		let master=null
+		if ( !this.PROPS.run.tooltippmaster)
+			{
+			}
+		else if (this.PROPS.run.tooltippmaster.getAttribute("id"))
+			{
+			master=`[id=\"${this.PROPS.run.tooltippmaster.getAttribute("id")}\"]`
+			}	
+		else if (this.PROPS.run.tooltippmaster.getAttribute("name"))
+			{
+			master=`[name=\"${this.PROPS.run.tooltippmaster.getAttribute("name")}\"]`
+			}
+		else
+			{
+			master=this.PROPS.run.tooltippmaster.nodeName.toLowerCase()	
+			}		
 		let configs=this._extender({},this.PROPS.run.currentProfile.dataWorker||{}, {adds:this._extender({enableToolTipp:this._enable_tooltipp, master: master}, this.PROPS.run.ENV)})
 		let ents=[...this.PROPS.run.doUpdateEnts||[]]
 		for (let ent of ents)

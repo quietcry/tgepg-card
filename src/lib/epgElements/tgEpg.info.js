@@ -38,14 +38,7 @@ export class tgEpgInfo extends tgEpgTooltipp
 			this.app = this.shadowRoot.querySelector('[name="app"]');
 
 		this.container = this._shadowRoot.querySelector('[name="container"]');
-		this.closeButton=this.container.querySelector('.closeButton');
-		if (this.closeButton)
-			{
-			this.closeButton.addEventListener("click", function(ev){that.classList.add("hide")}, true);	
-			}
-
 		}
-
 	//######################################################################################################################################
 	//
 	//
@@ -97,9 +90,15 @@ export class tgEpgInfo extends tgEpgTooltipp
 
 		let txt =this.template_mapper(this.PROPS.run.template, this.PROPS.run.data.data)	
 		txt=txt.replaceAll(/<!.+?>/gi, '<div name="empty"></div>')
-		this.container.innerHTML=txt	
+		this.container.innerHTML=txt
+		this.closeButton=this.container.querySelector('.closeButton');
+		if (this.closeButton)
+			{
+			this.closeButton.addEventListener("click", function(ev){that.classList.add("hide")}, true);	
+			}
 		this.classList.remove("hide")
 		let style=this.calculatePos()
+		style["position"]="absolute"
 		
 		//console.log(style, this.PROPS.run.data)
 		this.setStyle(style)

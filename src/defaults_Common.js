@@ -62,7 +62,7 @@ export class tgEpgDefaultsCommon
 	
 				tg-epg-proglist, tg-epg-channellist
 					{
-					--channelLineScale:  var(--scale, 0.1);
+					--channelLineScale:  var(--tgepg-scale);
 					}		
 				</style>
 				`	

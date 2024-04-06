@@ -31,8 +31,7 @@ export class tgEpgProgListDefaults extends tgEpgDefaultsCommon
 			
 			:host
 				{
-				--timeMarkerWidth: 2px;
-				--tgepg-progline-borderheight: 3px;
+				--tgepg-timeMarkerOffset: 0px;
 				display:inline-block;
 				font-size:12px;
 				overflow-x:auto;
@@ -59,7 +58,7 @@ export class tgEpgProgListDefaults extends tgEpgDefaultsCommon
 				}
 			.Progline
 				{
-				height:calc( var(--channelRowHeight) - 1 * var( --tgepg-progline-borderheight ) );
+				height:calc( var(--tgepg-channelRowHeight) - 1 * var( --tgepg-borderheight-channelline ) );
 				max-height:100% !important;
 				min-height:100% !important;
 				}
@@ -69,11 +68,11 @@ export class tgEpgProgListDefaults extends tgEpgDefaultsCommon
 				}
 			[name="app"] > .TabRow
 				{
-				border-top: var( --tgepg-progline-borderheight ) solid black;
-				border-bottom: var( --tgepg-progline-borderheight ) solid black;
-				min-height: calc( var(--channelRowHeight) * 1 );
-				max-height: calc( var(--channelRowHeight) * 1 );
-				height: calc( var(--channelRowHeight) * 1 );
+				border-top: var( --tgepg-borderheight-channelline ) solid var(--tgepg-bordercolor-channelline);
+				border-bottom: var( --tgepg-borderheight-channelline ) solid var(--tgepg-bordercolor-channelline);
+				min-height: calc( var(--tgepg-channelRowHeight) * 1 );
+				max-height: calc( var(--tgepg-channelRowHeight) * 1 );
+				height: calc( var(--tgepg-channelRowHeight) * 1 );
 
 				}
 			[name="app"] > .TabRow > .TabCell
@@ -87,13 +86,13 @@ export class tgEpgProgListDefaults extends tgEpgDefaultsCommon
 				}
 			[name="app"] > .TabRow:nth-child(even) > .TabCell > .Tab > .TabRow > .TabCell:nth-child(even)
 				{
-				background-color: white;
-				color: black;
+				background-color:var(--tgepg-bgcolor-secondary-light);
+				color: var(--tgepg-textcolor-secondary-light);
 				}
 			[name="app"] > .TabRow:nth-child(even) > .TabCell > .Tab > .TabRow > .TabCell:nth-child(odd)
 				{
-				background-color: black;
-				color: white;
+				background-color: var(--tgepg-bgcolor-secondary-dark);
+				color: var(--tgepg-textcolor-secondary-dark);
 				}
 			[name="app"] > .TabRow:nth-child(odd)
 				{
@@ -102,24 +101,24 @@ export class tgEpgProgListDefaults extends tgEpgDefaultsCommon
 				}
 			[name="app"] > .TabRow:nth-child(odd) > .TabCell > .Tab > .TabRow > .TabCell:nth-child(even)
 				{
-				background-color: darkgray;
-				color: black;
+				background-color: var(--tgepg-bgcolor-primary-dark);
+				color: var(--tgepg-textcolor-primary-dark);
 				}
 			[name="app"] > .TabRow:nth-child(odd) > .TabCell > .Tab > .TabRow > .TabCell:nth-child(odd)
 				{
-				background-color: lightgray;
-				color: black;
+				background-color: var(--tgepg-bgcolor-primary-light);
+				color: var(--tgepg-textcolor-primary-light);
 				}
 
 			[name="timemarker"]
 				{
 				position:absolute;
-				width: var( --timeMarkerWidth, 5px);
-				background-color: red;
+				width: var( --tgepg-width-timeMarker);
+				background-color: var(--tgepg-color-timeMarker);
 				z-index: 2000;
 				top: 0px;
 				height: 100%;
-				left: calc( var(--timeMarkerOffset) * var(--scale) - calc( var(--timeMarkerWidth) / 2 ))
+				left: calc( var(--tgepg-timeMarkerOffset) * var(--tgepg-scale) - calc( var(--tgepg-width-timeMarker) / 2 ))
 				}
 			[genre="10"]
 				{
