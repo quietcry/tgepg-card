@@ -40,12 +40,17 @@ export class tgEpgInfoDefaults extends tgEpgToolTippDefaults
 	static get styles()
 		{
 		var styles=super.styles||"";
-			styles=styles+`
+			styles=`
 			<style>
 			:host
-			{ max-width:40%;}
+				{ 
+				max-width:40%;
+				z-index: calc( var(--tgepg-maxZindex-org, 0) + 3 );
+				}
 			</style>
-			`;
+			`
+			+styles
+			;
 		return styles	
 		}
 

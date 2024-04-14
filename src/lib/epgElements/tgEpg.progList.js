@@ -295,6 +295,14 @@ export class tgEpgProgList extends channelProgListBasis
 	//
 	//######################################################################################################################################
 
+	get timeMarker()
+		{	
+		return this._shadowRoot.querySelector('[name="timemarker"]');;
+		}
+	set timeMarker(val)
+		{
+		
+		}
 	get enableToolTipp()
 		{	
 		return this.PROPS.attr.enableToolTipp||null;

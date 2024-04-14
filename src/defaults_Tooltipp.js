@@ -37,7 +37,7 @@ export class tgEpgToolTippDefaults extends tgEpgDefaultsCommon
 			:host
 				{
 				position:absolute;
-				z-index:2001;
+				z-index: calc( var(--tgepg-maxZindex-org, 0) + 2 );
 				}
 			div
 				{

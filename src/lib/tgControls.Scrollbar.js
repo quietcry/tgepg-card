@@ -17,17 +17,6 @@ export class tgControlScrollbar extends tgControls
 		{
 		super(mode, new tgDefaultsScrollbar());
 		var that=this;
-		// default Parameter nach Props einlesen
-		//this.tgEpgDefaults=new tgDefaultsScrollbar(this);
-		// default Parameter nach Props einlesen
-		//this.tgEpgDefaults=new tgEpgAppDefaults(this);
-		// this["PROPS"]=this._extender( (this["PROPS"] || {}),
-		// 				{
-		// 				defaults:this.tgEpgDefaults.loadDefaults(),
-		// 				run:this.tgEpgDefaults.loadRun(),
-		// 				set:this.tgEpgDefaults.loadSet()
-		// 				});
-		// Props durch hartcodierte Werte erweitern/anpassen
 		this["PROPS"]=this._extender( (this["PROPS"] || {}),
 						{
 						run:	{
@@ -36,17 +25,14 @@ export class tgControlScrollbar extends tgControls
 										debug:true,
 										error:true
 										},
+								connected:0,
+								restrictions:{left:0, right:0, top:0, bottom:0},
+								connectedTo:null,
+								observed:{}		
 								},
 						default:{connected:0},
 						paras:this._extender({})
 						});
-		// Props durch im Storage gespeichertes erweitern/anpassen
-		// this.PROPS.set = this._extender({}, (this.PROPS.defaults || {}), (this.PROPS.set || {}), (this._readOptions(this.PROPS.defaults._storageKey) || {}));
-
-		//this._debug("constructor - Parameters", "props:",this["PROPS"]);
-
-
-
 
 		this._containerWidth=null;
 		this._supermaster=null;
@@ -63,6 +49,10 @@ export class tgControlScrollbar extends tgControls
 		this._ChildVisibleRect={x:0,y:0,width:0,height:0};
 		this.myObserver = new ResizeObserver(entries =>
 			{
+			for (let ent of entries)
+				{
+				this.addToSizeObserver(ent.target)	
+				}	
 			var ev = new CustomEvent('resize');
 			this.dispatchEvent(ev);
 		  	});
@@ -109,9 +99,10 @@ export class tgControlScrollbar extends tgControls
 	connectedCallback ()
 		{
 		var that=this;
-		console.debug("connectedCallback", "start");
+		console.log("connectedCallback", "start");
 		if (this.PROPS.run.connected == 0)
 		 	{
+			console.log("init")	
 		 	this.init();
 			// this.refreshAppSizeAfterResizeOrInit();
 		 	// this.buildApp();
@@ -194,9 +185,92 @@ export class tgControlScrollbar extends tgControls
 			}
 		return root.querySelector(selector)
 		}
+	addToSizeObserver(elem, force=false)
+		{
+		let id=elem.getAttribute("id")||elem.getAttribute("name")||null
+		if (id)
+			{
+			if (id in this.PROPS.run.observed)
+				{
+				this.PROPS.run.observed[id].elem=elem	
+				this.PROPS.run.observed[id].used=true
+				return 0
+				}	
+			this.PROPS.run.observed[id]={id:id, elem:elem, used:true}
+			this.myObserver.observe(elem);
+			return 1
+			}						
+		}
 	render()
 		{
-		this.init()
+		let keys=Object.keys(this.PROPS.run.observed)	
+		for (let key of keys)
+			{	
+			this.PROPS.run.observed[key]["used"]=false	
+			}
+		setRestrictions.call(this)
+		keys=Object.keys(this.PROPS.run.restrictions)
+		for (let key of keys)
+			{
+			this.style.setProperty(`--scrollbar-restriction-${key}-calc`, `${this.PROPS.run.restrictions[key]}px`);	
+			}
+		setContainerwidth.call(this)
+		this.style.setProperty(`--scrollbar-corresponding-length-calc`, `${this.PROPS.run.containerwidth}px`);
+		keys=Object.keys(this.PROPS.run.observed)	
+		for (let key of keys)
+			{	
+			if (this.PROPS.run.observed[key]["used"]==false)
+				{
+				this.myObserver.unobserve(this.PROPS.run.observed[key].elem)
+				delete(this.PROPS.run.observed[key])
+				}
+			}
+		return	
+		function setContainerwidth()
+			{
+			let item=this.PROPS.run.connectedTo
+			let width=0
+
+			if (this._getType(item, "number"))
+				{
+				width=item	
+				}
+			else if (this._getType(item, "nodeElement"))
+				{
+				this.addToSizeObserver(item)	
+				let rect=item.getBoundingClientRect()	
+				width=(["top","bottom"].includes(this._pos))?rect.width:(["left","right"].includes(this._pos))?rect.height:0
+				}	
+			this.PROPS.run.containerwidth=width
+			}	
+		function setRestrictions()
+			{	
+			if (this._getType(this.PROPS.paras.restrictions, "hash"))
+				{
+				let keys=Object.keys(this.PROPS.paras.restrictions)
+				for (let key of keys)
+					{
+					let rest=0
+					let val = (this._getType(this.PROPS.paras.restrictions[key], "array"))?this.PROPS.paras.restrictions[key]:[this.PROPS.paras.restrictions[key]]
+					for (let item of val)
+						{
+	
+						if (this._getType(item, "number"))
+							{
+							rest+=item	
+							}
+						else if (this._getType(item, "nodeElement"))
+							{
+							let rect=item.getBoundingClientRect()
+
+	
+							rest+=(["top","bottom"].includes(key))?rect.height:(["left","right"].includes(key))?rect.width:0
+							}	
+						}
+					this.PROPS.run["restrictions"][key]=rest	
+					}	
+				}
+			}
 		}
 	//######################################################################################################################################
 	//init()
@@ -205,6 +279,36 @@ export class tgControlScrollbar extends tgControls
 	//######################################################################################################################################
 	init()
 		{
+		var that=this	
+		this.addEventListener("scroll",
+			function(ev)
+				{
+				let masters=this.PROPS.run["master"]||[]
+				for (let master of masters)
+					{
+					if (that._getType(master, "nodeElement"))
+						{
+						if (["top","bottom"].includes(that._pos))
+							{
+							master.scrollLeft=that.scrollLeft
+							}
+						else if (["left","right"].includes(that._pos))
+							{
+							master.scrollTop=that.scrollTop
+							}
+						}
+					}
+				}, false);
+		this.addEventListener("resize",
+			function(ev)
+				{
+				that.render();
+				}, false);
+
+
+
+		this.render()	
+		return	
 		var that=this;
 		var sbo="scrollbarobserver"
 		if (! this._parent.hasAttribute(sbo))
@@ -330,6 +434,71 @@ export class tgControlScrollbar extends tgControls
 	//##
 	//##
 	//#########################################################################################################
+	get master()
+		{
+		return this.PROPS.run.master||null;
+		}
+	set master(val)
+		{
+		var that=this
+		val=(this._getType(val, "array"))?val:[val]
+		let oldMasterReset=false
+		for (let elem of val)
+			{
+			if (this._getType(elem, "nodeElement"))
+				{
+				if (! oldMasterReset )
+					{
+					let masters=this.PROPS.run["master"]||[]
+					for (let master of masters)
+						{
+						master.removeEventListener("scroll", handleMasterScrolling, true)	
+						}	
+					this.PROPS.run["master"]=[]
+					oldMasterReset=true
+					}	
+				this.PROPS.run["master"].push(elem)
+				elem.addEventListener("scroll", handleMasterScrolling, true)	
+				}
+			}	
+		function handleMasterScrolling(e)
+			{
+			if (["top","bottom"].includes(that._pos))
+				{
+				if (!(that.scrollLeft==this.scrollLeft)) that.scrollLeft=this.scrollLeft
+				}
+			else if (["left","right"].includes(that._pos))
+				{
+				if (!(that.scrollTop==this.scrollTop)) that.scrollTop=this.scrollTop
+				}
+			}		
+		}
+	get connectedTo()
+		{
+		return this.PROPS.run.connectedTo;
+		}
+	set connectedTo(val)
+		{
+		this.PROPS.run["connectedTo"]=	val
+		this.render()
+		}
+	get restrictions()
+		{
+		return this.PROPS.run.restrictions;
+		}
+	set restrictions(val)
+		{
+		if (this._getType(val, "hash"))
+			{
+			this.PROPS.paras.restrictions=	{
+											left:(val.left)?val.left:0,
+											right:(val.right)?val.right:0,
+											top:(val.top)?val.top:0,
+											bottom:(val.bottom)?val.bottom:0
+											}
+			}	
+		this.render()
+		}
 	get supermaster()
 		{
 		return this._supermaster;

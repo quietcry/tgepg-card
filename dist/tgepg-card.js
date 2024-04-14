@@ -651,6 +651,9 @@ class tgEpgCard extends (0, _tgControlsJs.tgControls) {
         this._info("under construction ;-)", now);
         var that = this;
         this.detectENV();
+        this.PROPS.run = this._extender(this.PROPS.run || {}, {
+            zIndexFilter: []
+        });
         if (this._enable_DataWorker) {
             function startworker() {
                 var workerstringified = "";
@@ -665,6 +668,11 @@ class tgEpgCard extends (0, _tgControlsJs.tgControls) {
                 that.dataWorker = new Worker(workerBlobUrl);
                 that.dataWorker.onmessage = function(event) {
                     that.renderChannels(event.data);
+                    that.scrollbarX.restrictions = {
+                        left: [
+                            that.channelBox
+                        ]
+                    };
                 };
                 function workerRunnerAsString() {
                     var workerrunner = `	
@@ -705,7 +713,7 @@ class tgEpgCard extends (0, _tgControlsJs.tgControls) {
     }
     refresh(event = "") {
         var that = this;
-        this._debug("event", event);
+        this._log("refresh event", event);
         let connected = this.PROPS.run?.states?.connected || false;
         let constructed = this.PROPS.run?.states?.constructed || false;
         let profiled = this.PROPS.run?.states?.profiled || false;
@@ -726,7 +734,7 @@ class tgEpgCard extends (0, _tgControlsJs.tgControls) {
         let width = parseInt(this.app.clientWidth) - parseInt(run.currentProfile.design.channelRowWidth);
         run.currentProfile.design["scale"] = width / parseInt(run.currentProfile.design.previewSpan);
         let height = parseInt(run.appHeight) || null;
-        if (height && height > 0) this.style.setProperty("--tgepg-appHeight-org", `${height}px`);
+        if (height && height > 0) this.style.setProperty("--tgepg-appHeight-calc", `${height}px`);
         run["now"] = Math.floor(new Date() / 1000);
         if (run.min && run.max) {
             run["scrollOffset"] = run.scrollOffsetAbsolute && run.scrollOffsetAbsolute < run.now - run.currentProfile.design.setOfSpan ? run.scrollOffsetAbsolute - run.min : run.now - run.min - run.currentProfile.design.setOfSpan;
@@ -735,6 +743,7 @@ class tgEpgCard extends (0, _tgControlsJs.tgControls) {
         //let max= new Date(run.max*1000).toLocaleDateString("de-DE")	+ new Date(run.max*1000).toLocaleTimeString("de-DE")
         //console.log("run", min, max, run.currentProfile.design.setOfSpan)
         }
+        this.style.setProperty("--tgepg-maxZindex-calc", `${this._maxZindex(this, this.PROPS.run.zIndexFilter)}`);
     }
     setCurrentProfile(run) {
         var that = this;
@@ -803,6 +812,7 @@ class tgEpgCard extends (0, _tgControlsJs.tgControls) {
         var that = this;
         switch(direction){
             case "horizontal":
+                console.log("scrollerX");
                 if (scrollwidth === null) {
                     if (!that.PROPS.run.scrollOffset) return;
                     //console.debug("scroller", this.PROPS.run)	
@@ -817,6 +827,7 @@ class tgEpgCard extends (0, _tgControlsJs.tgControls) {
                 this.timeBar.scrollLeft = scrollwidth;
                 break;
             case "vertical":
+                console.log("scrollerY");
                 if (initiator !== "app") this.progListApp.scrollTop = scrollwidth;
                 this.channelBox.scrollTop = scrollwidth;
                 break;
@@ -869,6 +880,7 @@ class tgEpgCard extends (0, _tgControlsJs.tgControls) {
         return;
     }
     doQueryElements() {
+        var that = this;
         this.card = this._shadowRoot.querySelector("ha-card") || this._shadowRoot;
         this.app = this.card.querySelector('[name="app"]');
         if (this.app) {
@@ -877,30 +889,21 @@ class tgEpgCard extends (0, _tgControlsJs.tgControls) {
             this.superButton = this.app.querySelector('[name="superbutton"]');
             this.channelBox = this.app.querySelector('[name="channelBox"]');
             this.programBox = this.app.querySelector('[name="programBox"]');
-            this.epgOuterBox = this.app.querySelector('[name="epgOutBox"]');
-            this.scrollbarX = this._shadowRoot.querySelector(".tgcontrolscrollbarx");
-            this.scrollbarY = null;
+            this.progList = this.programBox.querySelector('[name="tgEpgProgList"]');
+            this.scrollBox = this.app.querySelector('[name="scrollBox"]');
+            this.epgOutBox = this.app.querySelector('[name="epgOutBox"]');
+            this.epgBox = this.app.querySelector('[name="epgBox"]');
+            this.scrollbarX = this.app.querySelector(".scrollbarX");
+            this.scrollbarY = this.app.querySelector(".scrollbarY");
             this.floatingMenu = this._shadowRoot.querySelector("tg-floatingMenu");
             this.workerSource = this._shadowRoot.querySelector('[name="worker"]');
             this.epgTooltipp = null;
             this.epgInfo = null;
         }
-    //console.debug("query", this.channelBox || "none")
-    // this.buttonCell = this.shadowRoot.querySelector('[name="buttonCell"]');
-    // this.epgBox = this.shadowRoot.querySelector('[name="epgBox"]');
-    // this.channelBox = this.shadowRoot.querySelector('[name="channelBox"]');
-    // this.programBox = this.shadowRoot.querySelector('[name="programBox"]');
-    // this.channelListApp = null;
-    // this.progListApp = null;
-    // this.optionBox = this.shadowRoot.querySelector('[name="optionBox"]');
-    // this.scrollbarX = this.shadowRoot.querySelector('.tgcontrolscrollbarx');;
-    // this.timeRow = this.shadowRoot.querySelector('[name="timeRow"]');
-    // this.timeMarker = that.shadowRoot.querySelector('[name="timemarker"]');
-    // this.timebar = card.querySelector(".error")
-    // this._elements.dl = card.querySelector(".dl")
-    // this._elements.topic = card.querySelector(".dt")
-    // this._elements.toggle = card.querySelector(".toggle")
-    // this._elements.value = card.querySelector(".value")
+        this.PROPS.run.zIndexFilter = [
+            this.scrollbarX,
+            this.scrollbarY
+        ];
     }
     detectENV() {
         this.PROPS.run["ENV"] = {
@@ -930,6 +933,7 @@ class tgEpgCard extends (0, _tgControlsJs.tgControls) {
     //
     //######################################################################################################################################
     init() {
+        this._log("init");
         let that = this;
         let test;
         if (this._enable_TimeBar) activateTimeBar.call(this);
@@ -967,14 +971,21 @@ class tgEpgCard extends (0, _tgControlsJs.tgControls) {
         }
         function activateToolTipp() {
             this.progListApp.enableToolTipp = this._enable_tooltipp;
-            if (this._enable_tooltipp) this.epgTooltipp = _connectToInfoTooltipp("tgepg-tooltipp", this);
+            if (this._enable_tooltipp) {
+                this.epgTooltipp = _connectToInfoTooltipp("tgepg-tooltipp", this);
+                this.PROPS.run.zIndexFilter.push(this.epgTooltipp);
+            }
         }
         function activateEpgInfo() {
             this.progListApp.enableEpgInfo = this._enable_epgInfo;
-            if (this._enable_epgInfo) this.epgInfo = _connectToInfoTooltipp("tgepg-info", this);
+            if (this._enable_epgInfo) {
+                this.epgInfo = _connectToInfoTooltipp("tgepg-info", this);
+                this.PROPS.run.zIndexFilter.push(this.epgInfo);
+            }
         }
         function activateTimemarker() {
             this.progListApp.enableTimemarker = this._enable_timemarker;
+            this.PROPS.run.zIndexFilter.push(this.progListApp.timeMarker);
         }
         function activateChannellist() {
             this.channelListApp = this.channelBox.querySelector("tgepg-channellist");
@@ -1028,13 +1039,33 @@ class tgEpgCard extends (0, _tgControlsJs.tgControls) {
         }
         function activateScrollbars() {
             var that = this;
-            this.scrollbarX.classList.remove("hide");
-            this.scrollbarX.addEventListener("scrolled", function(event) {
-                that.updateScrollbars("horizontal", this.scrollLeft, "app");
-            });
-            this.dependedApps.push({
-                app: this.scrollbarX
-            });
+            if (this.scrollbarX) {
+                this.scrollbarX.classList.remove("hide");
+                this.scrollbarX.restrictions = {
+                    left: [
+                        this.channelBox
+                    ]
+                };
+                this.scrollbarX.connectedTo = this.progList;
+                this.scrollbarX.master = [
+                    this.programBox,
+                    that.timeBar
+                ];
+                this.dependedApps.push({
+                    app: this.scrollbarX
+                });
+            }
+            if (this.scrollbarY) {
+                this.scrollbarY.classList.remove("hide");
+                this.scrollbarY.restrictions = {
+                    right: 0
+                };
+                this.scrollbarY.connectedTo = this.progList;
+                this.scrollbarY.master = this.epgBox;
+                this.dependedApps.push({
+                    app: this.scrollbarY
+                });
+            }
         }
     }
     refreshAppSizeAfterResizeOrInit() {
@@ -1573,6 +1604,10 @@ class tgControls extends HTMLElement {
     _createID() {
         return this.helper._createID.apply(this.helper, arguments);
     }
+    //######################################################################################################################################
+    _maxZindex() {
+        return this.helper._maxZindex.apply(this.helper, arguments);
+    }
 }
 
 },{"./tgControls.helper_basic.js":"dF8RS","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"dF8RS":[function(require,module,exports) {
@@ -2006,6 +2041,14 @@ class tgControlsHelperBasic {
         opt = JSON.stringify(org);
         localStorage.setItem(app, opt);
     }
+    //######################################################################################################################################
+    //
+    //
+    //
+    //######################################################################################################################################
+    _maxZindex(container, filter = []) {
+        if (this._getType(container, "nodeElement")) return Array.from(container.querySelectorAll("*")).filter((a)=>!filter.includes(a)).map((a)=>parseFloat(window.getComputedStyle(a).zIndex)).filter((a)=>!isNaN(a)).sort().pop() || 0;
+    }
 }
 
 },{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"gkKU3":[function(require,module,exports) {
@@ -2095,190 +2138,203 @@ class tgEpgCardDefaults extends (0, _defaultsCommonJs.tgEpgDefaultsCommon) {
         props["default"] = true;
         return props;
     }
-    static get template() {
+    static get styles() {
         var styles = super.styles || "";
         styles = styles + `
-			<style>
-			:host
-				{
-				position:relative;	
-				padding:0px;
-				margin:0px;
-				width:100%;
-				bottom:50px;
-				top:0px;
-				/*height:100%;*/
-				display:block;
+		<style>
+		:host
+			{
+			position:relative;	
+			padding:0px;
+			margin:0px;
+			width:100%;
+			/*bottom:50px;*/
+			top:0px;
+			height:100%;
+			display:block;
+			overflow:hidden;
 
-				--tgepg-topBarHeight: var( --tgepg-topBarHeight-org, 30px );
-				--tgepg-channelRowWidth: var( --tgepg-channelRowWidth-org, 100px );
-				--tgepg-channelRowHeight: var( --tgepg-channelRowHeight-org, 40px );
-				--tgepg-scale: var( --tgepg-scale-org, 1 );
-				--tgepg-appHeight: var( --tgepg-appHeight-org, 100% ) ;
-				--tgepg-bgcolor-primary-dark: var( --dark-primary-color, #0288d1);
-				--tgepg-bgcolor-primary-light: var( --light-primary-color, #b3e5fc);
-				--tgepg-textcolor-primary-dark: var( --primary-text-color, #212121);
-				--tgepg-textcolor-primary-light: var( --primary-text-color, #212121);
-				--tgepg-bgcolor-secondary-dark: var( --dark-secondary-color, #727272);
-				--tgepg-bgcolor-secondary-light: var( --light-secondary-color, #bdbdbd);
-				--tgepg-textcolor-secondary-dark: var( --primary-text-color, #212121);
-				--tgepg-textcolor-secondary-light: var( --primary-text-color, #212121);
-				--tgepg-bgcolor-channel-dark: var( --dark-grey-color, #0288d1);
-				--tgepg-bgcolor-channel-light: var( --blue-grey-color, #0288d1);
-				--tgepg-textcolor-channel-dark: var( --text-primary-color, #ffffff);
-				--tgepg-textcolor-channel-light: var( --text-primary-color, #ffffff);
+			--tgepg-topBarHeight: var( --tgepg-topBarHeight-org, 30px );
+			--tgepg-channelRowWidth: var( --tgepg-channelRowWidth-org, 100px );
+			--tgepg-channelRowHeight: var( --tgepg-channelRowHeight-org, 40px );
+			--tgepg-scale: var( --tgepg-scale-org, 1 );
+			--tgepg-appHeight: var( --tgepg-appHeight-calc, 100% ) ;
+			--tgepg-maxZindex: var(--tgepg-maxZindex-calc, 0) ;
 
-				--tgepg-color-divider: var( --divider-color, rgba(0, 0, 0, 0.12));
-				--tgepg-width-timeMarker: 2px;
-				--tgepg-color-timeMarker: var(--pink-color, red);
-				--tgepg-borderheight-channelline: 3px;
-				--tgepg-bordercolor-channelline: var( --input-outlined-idle-border-color, rgba(0, 0, 0, 0.38));
+			--tgepg-bgcolor-primary-dark: var(--tgepg-bgcolor-primary-dark-org, var(--dark-primary-color, #0288d1));
+			--tgepg-bgcolor-primary-light: var(--tgepg-bgcolor-primary-light-org, var( --light-primary-color, #b3e5fc));
+			--tgepg-textcolor-primary-dark: var(--tgepg-textcolor-primary-dark-org, var( --primary-text-color, #212121));
+			--tgepg-textcolor-primary-light: var(--tgepg-textcolor-primary-light-org, var( --primary-text-color, #212121));
 
-				}
-			div
-				{
-				padding: 0px;
-				margin: 0px;
-				box-sizing: border-box;
-				display:inline-block;
-				}
-			ha-card
-				{
-				display:block;
-				height:100%;	
-				}	
-			.gridcontainer
-				{
-				display: grid;
-				grid-auto-rows: 1fr;
-				grid-template-columns: var(--tgepg-channelRowWidth) 1fr;
-				grid-template-rows: var(--tgepg-topBarHeight) calc(100% - var(--tgepg-topBarHeight));
-				gap: 0px 0px;
-				grid-template-areas:
-					"superbutton timeBar"
-					"epgOutBox epgOutBox";
-				width: 100%;
-				height: var(--tgepg-appHeight);
+			--tgepg-timeBarBorder: var( --tgepg-timeBarBorder-org, 1px solid black);
 
-				}
-			.superbutton { grid-area: superbutton; }
-			.timeBar { grid-area: timeBar; }
-			.epgOutBox { grid-area: epgOutBox; }
+			--tgepg-scrollbarActiv-BgColor: var( --tgepg-scrollbarActiv-BgColor-org , lightgray); 	
+			--tgepg-scrollbarActiv-ThumbColor: var( --tgepg-scrollbarActiv-ThumbColor-org , red transparent); 
+			--tgepg-scrollbarActiv-Width: var( --tgepg-scrollbarActiv-Width-org , 15px); 
+			--tgepg-scrollbarActiv-Visibility: var( --tgepg-scrollbarActiv-Visibility-org , visible); 
+			--tgepg-scrollbarPassive-BgColor: var( --tgepg-scrollbarPassive-BgColor-org , lightgray); 	
+			--tgepg-scrollbarPassive-ThumbColor: var( --tgepg-scrollbarPassive-ThumbColor-org , pink transparent); 
+			--tgepg-scrollbarPassive-Width: var( --tgepg-scrollbarPassive-Width-org , 6px); 
+			--tgepg-scrollbarPassive-ThumbWidth: var( --tgepg-scrollbarPassive-ThumbWidth-org , 3px); 
+			--tgepg-scrollbarPassive-Visibility: var( --tgepg-scrollbarPassive-Visibility-org , visible); 
+
+			--tgepg-bgcolor-secondary-dark: var(--tgepg-bgcolor-secondary-dark-org, var( --dark-secondary-color, #727272));
+			--tgepg-bgcolor-secondary-light: var(--tgepg-bgcolor-secondary-light-org,  var( --light-secondary-color, #bdbdbd));
+			--tgepg-textcolor-secondary-dark: var(--tgepg-textcolor-secondary-dark-org,  var( --primary-text-color, #212121));
+			--tgepg-textcolor-secondary-light: var(--tgepg-textcolor-secondary-light-org,  var( --primary-text-color, #212121));
+			--tgepg-bgcolor-channel-dark: var(--tgepg-bgcolor-channel-dark-org,  var( --dark-grey-color, #0288d1));
+			--tgepg-bgcolor-channel-light: var(--tgepg-bgcolor-channel-light-org,  var( --blue-grey-color, #0288d1));
+			--tgepg-textcolor-channel-dark: var(--tgepg-textcolor-channel-dark-org,  var( --text-primary-color, #ffffff));
+			--tgepg-textcolor-channel-light: var(--tgepg-textcolor-channel-light-org,  var( --text-primary-color, #ffffff));
 
 
-			/* [name="app"]
-				{
-				top:0px;
-				left:0px;
-				overflow: hidden;
-				}
-			*/
-			[name="timeBar"]
-				{
-				background-color: lightgray;
-				white-space: nowrap;
-				overflow: hidden;
-				height: var( --tgepg-topBarHeight )
-				}
-			[name="superbutton"]
-				{
-				background-color: yellow;
-				}
-			[name="epgOutBox"]
-				{
-				position:relative;	
-				background-color: pink;
-				width:100%;
-				height:100%;
-				overflow-x: hidden;
-				}
+			--tgepg-color-divider: var(--tgepg-color-divider-org,  var( --divider-color, rgba(0, 0, 0, 0.12)));
+			--tgepg-width-timeMarker: var(--tgepg-width-timeMarker-org,  2px);
+			--tgepg-color-timeMarker: var(--tgepg-color-timeMarker-org,  var(--pink-color, red));
+			--tgepg-borderheight-channelline: var(--tgepg-borderheight-channelline-org,  3px);
+			--tgepg-bordercolor-channelline: var(--tgepg-bordercolor-channelline-org,  var( --input-outlined-idle-border-color, rgba(0, 0, 0, 0.38)));
 
-			[name="epgBox"]
-				{
-				display: grid;
-				grid-auto-rows: 1fr;
-				grid-template-columns: var( --tgepg-channelRowWidth ) 1fr;
-				grid-template-rows: minmax(min-content, max-content) ;
-				gap: 0px 0px;
-				grid-template-areas:
-					"channelBox programBox";
-				width:100%;
-				height:100%;
-				grid-auto-flow: dense;
-				}
-			[name="channelBox"]
-				{
-				background-color: lightblue;
-				position:relative;
-				}
-			[name="programBox"]
-				{
-				top:0px;
-				background-color: darkred;
-				position:relative;
-				overflow-x: auto;
-				overflow-y: hidden;
+			}
+		div
+			{
+			padding: 0px;
+			margin: 0px;
+			box-sizing: border-box;
+			display:inline-block;
+			}
+		ha-card
+			{
+			display:block;
+			height:100%;
+			overflow:hidden;	
+			}	
+		.gridcontainer
+			{
+			display: grid;
+			grid-auto-rows: 1fr;
+			grid-template-columns: var(--tgepg-channelRowWidth) 1fr;
+			grid-template-rows: var(--tgepg-topBarHeight) calc(100% - var(--tgepg-topBarHeight));
+			gap: 0px 0px;
+			grid-template-areas:
+				"superbutton timeBar"
+				"scrollBox scrollBox";
+			width: 100%;
+			height: var(--tgepg-appHeight);
+			overflow:hidden;
+			}
+		.superbutton { grid-area: superbutton; }
+		.timeBar { grid-area: timeBar; }
+		.scrollBox { grid-area: scrollBox; }
 
-				}
-			/*hide scrollbar*/
-			[name="programBox"]
-				{
-				-ms-overflow-style: none;
-				scrollbar-width: none;
-				}
-			[name="programBox"]::-webkit-scrollbar
-				{
-				display: none;
-				  }
-			.Tab
-				{
-				display:table;
-				border-collapse: collapse;
-				}
-			.TabRow
-				{
-				display:table-row;
-				}
-			.TabCell
-				{
-				display:table-cell;
-				vertical-align:top;
-				}
-			.optionBox
-				{
-				position:absolute;
-				left:0px;
-				top:0px;
-				height:100%;
-				width:100%;
-				background-color:gray;
-				z-Index:3000;
-				}
-			tg-epg-timebar
-				{
-				--timeBarBorder: 1px solid black;
-				--timeBarHeight: var( --tgepg-topBarHeight );
-				--timeBarScale:  var( --tgepg-scale );
-				}
-			tg-epg-proglist, tg-epg-channellist
-				{
-				--channelLineHeight: var( --channelRowHeight);
-				--channelLineScale:  var( --tgepg-scale);
-				}
+		[name="timeBar"]
+			{
+			white-space: nowrap;
+			overflow: hidden;
+			height: var( --tgepg-topBarHeight )
+			}
+		[name="superbutton"]
+			{
+			}
+		[name="scrollBox"]
+			{
+			position:relative;	
+			width:100%;
+			height:100%;
+			overflow: hidden;
+			}
+		[name="epgOutBox"]
+			{
+			position:relative;	
+			width:100%;
+			height:100%;
+			overflow: hidden;
+			}
 
-			</style>
-			`;
+		[name="epgBox"]
+			{
+			display: grid;
+			grid-auto-rows: 1fr;
+			grid-template-columns: var( --tgepg-channelRowWidth ) 1fr;
+			grid-template-rows: minmax(min-content, max-content) ;
+			gap: 0px 0px;
+			grid-template-areas:
+				"channelBox programBox";
+			width:100%;
+			height:100%;
+			grid-auto-flow: dense;
+			overflow-x:hidden;
+			overflow-y:auto;
+			}
+		[name="channelBox"]
+			{
+			position:relative;
+			}
+		[name="programBox"]
+			{
+			top:0px;
+			position:relative;
+			overflow-x: auto;
+			overflow-y: hidden;
+			}
+		.Tab
+			{
+			display:table;
+			border-collapse: collapse;
+			}
+		.TabRow
+			{
+			display:table-row;
+			}
+		.TabCell
+			{
+			display:table-cell;
+			vertical-align:top;
+			}
+		.optionBox
+			{
+			position:absolute;
+			left:0px;
+			top:0px;
+			height:100%;
+			width:100%;
+			background-color:gray;
+			z-Index:3000;
+			}
+/*
+		tg-epg-timebar
+			{
+			--timeBarBorder: 1px solid black;
+			--timeBarHeight: var( --tgepg-topBarHeight );
+			--timeBarScale:  var( --tgepg-scale );
+			}
+		tg-epg-proglist, tg-epg-channellist
+			{
+			--channelLineHeight: var( --channelRowHeight);
+			--channelLineScale:  var( --tgepg-scale);
+			}
+*/
+		</style>
+		`;
+        return styles;
+    }
+    static get template() {
+        var styles = this.styles;
         var tmp = styles + `
 			<!-- App -->
 			<ha-card>
 			<div name="app" class="card-content gridcontainer">
 				<div name="superbutton" class="superbutton"></div>
 				<div name="timeBar" class="timeBar"></div>
-				<div name="epgOutBox" class="epgOutBox">
-					<tgcontrol-scrollbar class="tgcontrolscrollbarx hide" pos="bottom" getsizefrom='.tgEpgProgList' getxsizefrom="" getysizefrom=""></tgcontrol-scrollbar>
-					<div name="epgBox" class="epgBox">
-						<div name="channelBox" class=""></div>
-						<div name="programBox" class="programBox"></div>
+				<div name="scrollBox" class="scrollBox greedy scrollbar_off">
+					<tgcontrol-scrollbar class="scrollbarX hide" pos="bottom"></tgcontrol-scrollbar>
+					<tgcontrol-scrollbar class="scrollbarY hide" pos="right"></tgcontrol-scrollbar>
+					<div name="epgOutBox" class="epgOutBox scrollbar_off">
+						<div name="epgBox" class="epgBox scrollbar_off">
+							<div name="channelBox" class=""></div>
+							<div name="programBox" class="programBox scrollbar_off">
+								<tgepg-proglist class="tgEpgProgList greedyH" name="tgEpgProgList"></tgepg-proglist>
+							</div>
+						</div>
 					</div>
 				</div>
 			</div>
@@ -2354,11 +2410,68 @@ class tgEpgDefaultsCommon {
 					{
 					display:none;
 					}
-	
 				tg-epg-proglist, tg-epg-channellist
 					{
 					--channelLineScale:  var(--tgepg-scale);
-					}		
+					}
+				/* Scrollbars custom design */
+				/* width */
+				:host.scrollbar_on.scrolling_passive::-webkit-scrollbar,
+				.scrollbar_on.scrolling_passive::-webkit-scrollbar 
+					{
+					 width: 3px;
+					}	
+				/* width */
+				:host.scrollbar_on::-webkit-scrollbar,
+				.scrollbar_on::-webkit-scrollbar 
+					{
+					 width: 15px;
+					}	
+				/* Track */
+				:host.scrollbar_on::-webkit-scrollbar-track,
+				.scrollbar_on::-webkit-scrollbar-track
+					{
+					box-shadow: inset 0 0 5px grey;
+					-webkit-box-shadow: none !important; 
+					border-radius: 10px;
+					background: none;
+					}
+					 
+				/* Handle */
+				:host.scrollbar_on::-webkit-scrollbar-thumb,
+				.scrollbar_on::-webkit-scrollbar-thumb 
+					{
+					background: red; 
+					border-radius: 5px;
+					}
+					
+				/* Handle on hover */
+				:host.scrollbar_on::-webkit-scrollbar-thumb:hover,
+				.scrollbar_on::-webkit-scrollbar-thumb:hover 
+					{
+					background: #b30000;
+					width:25px;
+					}
+				/* Handle on hover */
+				:host.scrollbar_on::-webkit-scrollbar:hover,
+				.scrollbar_on::-webkit-scrollbar:hover 
+					{
+					background: #b30000;
+					width:25px;
+					}
+				/*scrollbar off*/		
+				:host.scrollbar_off,
+				.scrollbar_off
+					{
+					-ms-overflow-style: none;
+					scrollbar-width: none;
+					}
+				:host.scrollbar_off::-webkit-scrollbar,
+				.scrollbar_off::-webkit-scrollbar
+					{
+					display: none;
+					}
+					
 				</style>
 				`;
     }
@@ -4237,6 +4350,10 @@ class tgEpgProgList extends (0, _channelProgListBasisJs.channelProgListBasis) {
     //
     //
     //######################################################################################################################################
+    get timeMarker() {
+        return this._shadowRoot.querySelector('[name="timemarker"]');
+    }
+    set timeMarker(val) {}
     get enableToolTipp() {
         return this.PROPS.attr.enableToolTipp || null;
     }
@@ -4292,7 +4409,7 @@ class tgEpgProgListDefaults extends (0, _defaultsCommonJs.tgEpgDefaultsCommon) {
     // 	props["timelinestart"]=""+ Math.floor(new Date() / 1000)-(30*60);
     // 	return props;
     // 	}	
-    static get template() {
+    static get styles() {
         var styles = super.styles || "";
         styles = styles + `
 			<style>
@@ -4311,12 +4428,6 @@ class tgEpgProgListDefaults extends (0, _defaultsCommonJs.tgEpgDefaultsCommon) {
 				top:0px;
 				box-sizing: border-box;
 
-				}
-			:host::-webkit-scrollbar
-				{
-				display: none;
-				-ms-overflow-style: none;
-				scrollbar-width: none;
 				}
 			[name="app"]
 				{
@@ -4383,7 +4494,7 @@ class tgEpgProgListDefaults extends (0, _defaultsCommonJs.tgEpgDefaultsCommon) {
 				position:absolute;
 				width: var( --tgepg-width-timeMarker);
 				background-color: var(--tgepg-color-timeMarker);
-				z-index: 2000;
+				z-index: calc( var(--tgepg-maxZindex-org, 0) + 1 );
 				top: 0px;
 				height: 100%;
 				left: calc( var(--tgepg-timeMarkerOffset) * var(--tgepg-scale) - calc( var(--tgepg-width-timeMarker) / 2 ))
@@ -4419,8 +4530,11 @@ class tgEpgProgListDefaults extends (0, _defaultsCommonJs.tgEpgDefaultsCommon) {
 
 
 			</style>
-
 			`;
+        return styles;
+    }
+    static get template() {
+        var styles = this.styles;
         var tmp = styles + `
 			<!-- App -->
 			<div name="timemarker" class="hide"></div>
@@ -4787,33 +4901,28 @@ class tgControlScrollbar extends (0, _tgControlsJs.tgControls) {
     constructor(mode = "open", props = {}){
         super(mode, new (0, _defaultsScrollbarJs.tgDefaultsScrollbar)());
         var that = this;
-        // default Parameter nach Props einlesen
-        //this.tgEpgDefaults=new tgDefaultsScrollbar(this);
-        // default Parameter nach Props einlesen
-        //this.tgEpgDefaults=new tgEpgAppDefaults(this);
-        // this["PROPS"]=this._extender( (this["PROPS"] || {}),
-        // 				{
-        // 				defaults:this.tgEpgDefaults.loadDefaults(),
-        // 				run:this.tgEpgDefaults.loadRun(),
-        // 				set:this.tgEpgDefaults.loadSet()
-        // 				});
-        // Props durch hartcodierte Werte erweitern/anpassen
         this["PROPS"] = this._extender(this["PROPS"] || {}, {
             run: {
                 msg: {
                     log: true,
                     debug: true,
                     error: true
-                }
+                },
+                connected: 0,
+                restrictions: {
+                    left: 0,
+                    right: 0,
+                    top: 0,
+                    bottom: 0
+                },
+                connectedTo: null,
+                observed: {}
             },
             default: {
                 connected: 0
             },
             paras: this._extender({})
         });
-        // Props durch im Storage gespeichertes erweitern/anpassen
-        // this.PROPS.set = this._extender({}, (this.PROPS.defaults || {}), (this.PROPS.set || {}), (this._readOptions(this.PROPS.defaults._storageKey) || {}));
-        //this._debug("constructor - Parameters", "props:",this["PROPS"]);
         this._containerWidth = null;
         this._supermaster = null;
         this.supressScrollEvent = false;
@@ -4833,6 +4942,7 @@ class tgControlScrollbar extends (0, _tgControlsJs.tgControls) {
             height: 0
         };
         this.myObserver = new ResizeObserver((entries)=>{
+            for (let ent of entries)this.addToSizeObserver(ent.target);
             var ev = new CustomEvent("resize");
             this.dispatchEvent(ev);
         });
@@ -4877,8 +4987,9 @@ class tgControlScrollbar extends (0, _tgControlsJs.tgControls) {
     //######################################################################################################################################
     connectedCallback() {
         var that = this;
-        console.debug("connectedCallback", "start");
+        console.log("connectedCallback", "start");
         if (this.PROPS.run.connected == 0) {
+            console.log("init");
             this.init();
             // this.refreshAppSizeAfterResizeOrInit();
             // this.buildApp();
@@ -4939,8 +5050,79 @@ class tgControlScrollbar extends (0, _tgControlsJs.tgControls) {
         }
         return root.querySelector(selector);
     }
+    addToSizeObserver(elem, force = false) {
+        let id = elem.getAttribute("id") || elem.getAttribute("name") || null;
+        if (id) {
+            if (id in this.PROPS.run.observed) {
+                this.PROPS.run.observed[id].elem = elem;
+                this.PROPS.run.observed[id].used = true;
+                return 0;
+            }
+            this.PROPS.run.observed[id] = {
+                id: id,
+                elem: elem,
+                used: true
+            };
+            this.myObserver.observe(elem);
+            return 1;
+        }
+    }
     render() {
-        this.init();
+        let keys = Object.keys(this.PROPS.run.observed);
+        for (let key of keys)this.PROPS.run.observed[key]["used"] = false;
+        setRestrictions.call(this);
+        keys = Object.keys(this.PROPS.run.restrictions);
+        for (let key of keys)this.style.setProperty(`--scrollbar-restriction-${key}-calc`, `${this.PROPS.run.restrictions[key]}px`);
+        setContainerwidth.call(this);
+        this.style.setProperty(`--scrollbar-corresponding-length-calc`, `${this.PROPS.run.containerwidth}px`);
+        keys = Object.keys(this.PROPS.run.observed);
+        for (let key of keys)if (this.PROPS.run.observed[key]["used"] == false) {
+            this.myObserver.unobserve(this.PROPS.run.observed[key].elem);
+            delete this.PROPS.run.observed[key];
+        }
+        return;
+        function setContainerwidth() {
+            let item = this.PROPS.run.connectedTo;
+            let width = 0;
+            if (this._getType(item, "number")) width = item;
+            else if (this._getType(item, "nodeElement")) {
+                this.addToSizeObserver(item);
+                let rect = item.getBoundingClientRect();
+                width = [
+                    "top",
+                    "bottom"
+                ].includes(this._pos) ? rect.width : [
+                    "left",
+                    "right"
+                ].includes(this._pos) ? rect.height : 0;
+            }
+            this.PROPS.run.containerwidth = width;
+        }
+        function setRestrictions() {
+            if (this._getType(this.PROPS.paras.restrictions, "hash")) {
+                let keys = Object.keys(this.PROPS.paras.restrictions);
+                for (let key of keys){
+                    let rest = 0;
+                    let val = this._getType(this.PROPS.paras.restrictions[key], "array") ? this.PROPS.paras.restrictions[key] : [
+                        this.PROPS.paras.restrictions[key]
+                    ];
+                    for (let item of val){
+                        if (this._getType(item, "number")) rest += item;
+                        else if (this._getType(item, "nodeElement")) {
+                            let rect = item.getBoundingClientRect();
+                            rest += [
+                                "top",
+                                "bottom"
+                            ].includes(key) ? rect.height : [
+                                "left",
+                                "right"
+                            ].includes(key) ? rect.width : 0;
+                        }
+                    }
+                    this.PROPS.run["restrictions"][key] = rest;
+                }
+            }
+        }
     }
     //######################################################################################################################################
     //init()
@@ -4949,66 +5131,24 @@ class tgControlScrollbar extends (0, _tgControlsJs.tgControls) {
     //######################################################################################################################################
     init() {
         var that = this;
-        var sbo = "scrollbarobserver";
-        if (!this._parent.hasAttribute(sbo)) {
-            this.myObserver.observe(this._parent);
-            this.addEventListener("resize", function(ev) {
-                this.init();
-            }, false);
-            this._parent.setAttribute(sbo, "1");
-        }
-        var parent = this._parent.getBoundingClientRect();
-        //this.getParent('[name="tgEpgProgList"]')
-        if (this.PROPS.paras["getsizefrom"]) {
-            this._getSizeXFromElement = this.getParent(this.PROPS.paras["getsizefrom"]);
-            this._getSizeYFromElement = this._getSizeXFromElement;
-        }
-        if (this.PROPS.paras["getxsizefrom"]) this._getSizeXFromElement = this.getParent(this.PROPS.paras["getxsizefrom"]);
-        if (this.PROPS.paras["getysizefrom"]) this._getSizeYFromElement = this.getParent(this.PROPS.paras["getysizefrom"]);
-        if (!this._direction || this._direction == "horizontal" && !this._getSizeXFromElement || this._direction == "vertical" && !this._getSizeYFromElement) return;
-        if (this._direction == "horizontal") {
-            if (!this._getSizeXFromElement.hasAttribute(sbo)) {
-                this.myObserver.observe(this._getSizeXFromElement);
-                this._getSizeXFromElement.setAttribute(sbo, "1");
+        this.addEventListener("scroll", function(ev) {
+            let masters = this.PROPS.run["master"] || [];
+            for (let master of masters)if (that._getType(master, "nodeElement")) {
+                if ([
+                    "top",
+                    "bottom"
+                ].includes(that._pos)) master.scrollLeft = that.scrollLeft;
+                else if ([
+                    "left",
+                    "right"
+                ].includes(that._pos)) master.scrollTop = that.scrollTop;
             }
-            this.style.right = "0px";
-            this.style.width = parent.width - (this._getSizeXFromElement.getBoundingClientRect().x + this._getSizeXFromElement.parentNode.scrollLeft - parent.x) + "px";
-            this.container.style.width = this._getSizeXFromElement.getBoundingClientRect().width + "px";
-            this.style.display = this.offsetWidth > this.container.offsetWidth ? "none" : "";
-            this.supressScrollEvent = true;
-            this.scrollLeft = this._getSizeXFromElement.parentNode.scrollLeft;
-        } else if (this._direction == "vertical") {
-            if (!this._getSizeYFromElement.hasAttribute(sbo)) {
-                this.myObserver.observe(this._getSizeYFromElement);
-                this._getSizeYFromElement.setAttribute(sbo, "1");
-            }
-            this.style.bottom = "0px";
-            this.style.height = parent.height - (this._getSizeXFromElement.getBoundingClientRect().y - parent.y) + "px";
-            this.container.style.height = this._getSizeXFromElement.getBoundingClientRect().height + "px";
-            this.style.display = this.offsetHeight > this.container.offsetHeight ? "none" : "";
-            this.scrollTop = this._getSizeXFromElement.scrollTop;
-        }
-        if (!this.hasAttribute("hasScrollHandler") || parseInt(this.getAttribute("hasScrollHandler")) !== 1) {
-            this.setAttribute("hasScrollHandler", "1");
-            this.addEventListener("scroll", function(ev) {
-                if (!that.supressScrollEvent) {
-                    let offset = that._direction == "horizontal" ? that.scrollLeft : that.scrollTop;
-                    var ev = new CustomEvent("scrolled", {
-                        detail: {
-                            direction: that._direction,
-                            scrollwidth: offset
-                        }
-                    });
-                    //console.log("scrollevent",this, this._getSizeXFromElement.parentNode)
-                    if (this._reporttoElement) this._reporttoElement.dispatchEvent(ev);
-                    else {
-                        this._getSizeXFromElement.parentNode.scrollLeft = offset;
-                        this.dispatchEvent(ev);
-                    }
-                }
-                that.supressScrollEvent = false;
-            }, false);
-        }
+        }, false);
+        this.addEventListener("resize", function(ev) {
+            that.render();
+        }, false);
+        this.render();
+        var that, sbo, parent;
         return;
     }
     //######################################################################################################################################
@@ -5038,6 +5178,58 @@ class tgControlScrollbar extends (0, _tgControlsJs.tgControls) {
     //##
     //##
     //#########################################################################################################
+    get master() {
+        return this.PROPS.run.master || null;
+    }
+    set master(val) {
+        var that = this;
+        val = this._getType(val, "array") ? val : [
+            val
+        ];
+        let oldMasterReset = false;
+        for (let elem of val)if (this._getType(elem, "nodeElement")) {
+            if (!oldMasterReset) {
+                let masters = this.PROPS.run["master"] || [];
+                for (let master of masters)master.removeEventListener("scroll", handleMasterScrolling, true);
+                this.PROPS.run["master"] = [];
+                oldMasterReset = true;
+            }
+            this.PROPS.run["master"].push(elem);
+            elem.addEventListener("scroll", handleMasterScrolling, true);
+        }
+        function handleMasterScrolling(e) {
+            if ([
+                "top",
+                "bottom"
+            ].includes(that._pos)) {
+                if (!(that.scrollLeft == this.scrollLeft)) that.scrollLeft = this.scrollLeft;
+            } else if ([
+                "left",
+                "right"
+            ].includes(that._pos)) {
+                if (!(that.scrollTop == this.scrollTop)) that.scrollTop = this.scrollTop;
+            }
+        }
+    }
+    get connectedTo() {
+        return this.PROPS.run.connectedTo;
+    }
+    set connectedTo(val) {
+        this.PROPS.run["connectedTo"] = val;
+        this.render();
+    }
+    get restrictions() {
+        return this.PROPS.run.restrictions;
+    }
+    set restrictions(val) {
+        if (this._getType(val, "hash")) this.PROPS.paras.restrictions = {
+            left: val.left ? val.left : 0,
+            right: val.right ? val.right : 0,
+            top: val.top ? val.top : 0,
+            bottom: val.bottom ? val.bottom : 0
+        };
+        this.render();
+    }
     get supermaster() {
         return this._supermaster;
     }
@@ -5077,83 +5269,99 @@ class tgDefaultsScrollbar extends (0, _defaultsCommonJs.tgEpgDefaultsCommon) {
         props["_default"] = true;
         return props;
     }
+    static get styles() {
+        var styles = super.styles || "";
+        styles = styles + `
+			<style>
+			:host
+				{
+				position: absolute;
+				z-index: calc( var(--tgepg-maxZindex) + 4 );
+
+				--scrollbar-restriction-top: var(--scrollbar-restriction-top-calc , 0px);
+				--scrollbar-restriction-left: var(--scrollbar-restriction-left-calc , 0px);
+				--scrollbar-restriction-right: var(--scrollbar-restriction-right-calc , 0px);
+				--scrollbar-restriction-bottom: var(--scrollbar-restriction-bottom-calc , 0px);
+
+				--scrollbar-corresponding-length: var(--scrollbar-corresponding-length-calc, 0px);
+
+				scrollbar-color: var(--tgepg-scrollbarPassive-ThumbColor);
+				scrollbar-width: thin;
+				}
+			:host(:hover)
+				{
+				background-color: var(--tgepg-scrollbarActiv-BgColor);
+				scrollbar-color: var(--tgepg-scrollbarActiv-ThumbColor);
+				scrollbar-width: auto;
+				}
+		
+	
+			:host([pos="left"]),
+			:host([pos="right"])
+				{
+				top: var(--scrollbar-restriction-top);
+				bottom: var(--scrollbar-restriction-bottom);
+				width:var(--tgepg-scrollbarPassive-Width);
+				overflow-x: hidden;
+				}
+			:host([pos="left"])
+				{
+				left: var(--scrollbar-restriction-left);
+				}
+			:host([pos="right"])
+				{
+				right: var(--scrollbar-restriction-right);
+				}
+			:host([pos="left"]) div,
+			:host([pos="right"]) div				{
+				width:0.1px;
+				height:var(--scrollbar-corresponding-length);
+				}
+			:host([pos="left"]:hover),
+			:host([pos="right"]:hover)
+				{
+				width: var(--tgepg-scrollbarActiv-Width);
+				overflow-y: auto;
+				}
+			:host([pos="top"]),
+			:host([pos="bottom"])
+				{
+				left: var(--scrollbar-restriction-left);
+				right: var(--scrollbar-restriction-right);
+				height: var(--tgepg-scrollbarPassive-Width);
+				overflow-y: hidden;
+
+				}
+			:host([pos="bottom"])
+				{
+				bottom: var(--scrollbar-restriction-bottom);
+				}
+			:host([pos="top"])
+				{
+				top: var(--scrollbar-restriction-top);
+				}
+			:host([pos="top"]) div,
+			:host([pos="bottom"]) div
+				{
+				height: 0.1px;
+				width: var(--scrollbar-corresponding-length);
+				}
+			:host([pos="top"]:hover),
+			:host([pos="bottom"]:hover)
+				{
+				height: var(--tgepg-scrollbarActiv-Width);
+				overflow-x: auto;
+				}
+
+			</style>
+		`;
+        return styles;
+    }
     static get template() {
-        let tmp = `
-				<style>
-				:host
-					{
-					--scrollbarBgColor: lightgray;
-					--scrollbarColor: pink transparent;
-					--scrollbarSleepingWidth: 6px;
-					--scrollBarWidth:12px;
-	
-					position:absolute;
-					scrollbar-color: transparent transparent; /* thumb and track color */
-					scrollbar-width: thin;
-					z-index:100;
-					overflow: hidden;
-					}
-				:host(:hover)
-					{
-					background-color: var(--scrollbarBgColor);
-					scrollbar-color: var(--scrollbarColor);
-					scrollbar-width: var(--scrollBarWidth);
-					}
-	
-				:host([direction="vertical"],[pos="left"],[pos="right"])
-					{
-					top: 0px;
-					bottom: 0px;
-					width:var(--scrollbarSleepingWidth);
-					}
-				:host([pos="left"])
-					{
-					left:0px;
-					}
-				:host([direction="vertical"],[pos="right"])
-					{
-					right: 0px;
-					}
-				:host([direction="vertical"],[pos="left"],[pos="right"]) div
-					{
-					width:1px;
-					}
-				:host([direction="vertical"],[pos="left"],[pos="right"]:hover)
-					{
-					width: var(--scrollBarWidth);
-					overflow-y: auto;
-					}
-				:host([direction="horizontal"]),
-				:host([pos="top"]),
-				:host([pos="bottom"])
-					{
-					height:var(--scrollbarSleepingWidth);
-					}
-				:host([direction="horizontal"]),
-				:host([pos="bottom"])
-					{
-					bottom:0px;
-					}
-				:host([pos="top"])
-					{
-					top: 0px;
-					}
-				:host([direction="horizontal"]) div,
-				:host([pos="top"]) div,
-				:host([pos="bottom"]) div
-					{
-					height: 1px;
-					}
-				:host([direction="horizontal"]:hover),
-				:host([pos="top"]:hover),
-				:host([pos="bottom"]:hover)
-					{
-					height: var(--scrollBarWidth);
-					overflow-x: auto;
-					}
-	
-				</style>
-				<div name="container"></div>`;
+        var styles = this.styles;
+        var tmp = styles + `
+						<div name="container"></div>
+						`;
         return tmp;
     }
 }
@@ -5383,7 +5591,7 @@ class tgEpgToolTippDefaults extends (0, _defaultsCommonJs.tgEpgDefaultsCommon) {
 			:host
 				{
 				position:absolute;
-				z-index:2001;
+				z-index: calc( var(--tgepg-maxZindex-org, 0) + 2 );
 				}
 			div
 				{
@@ -5583,12 +5791,15 @@ class tgEpgInfoDefaults extends (0, _defaultsTooltippJs.tgEpgToolTippDefaults) {
     }
     static get styles() {
         var styles = super.styles || "";
-        styles = styles + `
+        styles = `
 			<style>
 			:host
-			{ max-width:40%;}
+				{ 
+				max-width:40%;
+				z-index: calc( var(--tgepg-maxZindex-org, 0) + 3 );
+				}
 			</style>
-			`;
+			` + styles;
         return styles;
     }
     static get template() {

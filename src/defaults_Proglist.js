@@ -22,8 +22,7 @@ export class tgEpgProgListDefaults extends tgEpgDefaultsCommon
 	// 	props["timelinestart"]=""+ Math.floor(new Date() / 1000)-(30*60);
 	// 	return props;
 	// 	}	
-
-	static get template()
+	static get styles()
 		{
 		var styles=super.styles||"";
 			styles=styles+`
@@ -43,12 +42,6 @@ export class tgEpgProgListDefaults extends tgEpgDefaultsCommon
 				top:0px;
 				box-sizing: border-box;
 
-				}
-			:host::-webkit-scrollbar
-				{
-				display: none;
-				-ms-overflow-style: none;
-				scrollbar-width: none;
 				}
 			[name="app"]
 				{
@@ -115,7 +108,7 @@ export class tgEpgProgListDefaults extends tgEpgDefaultsCommon
 				position:absolute;
 				width: var( --tgepg-width-timeMarker);
 				background-color: var(--tgepg-color-timeMarker);
-				z-index: 2000;
+				z-index: calc( var(--tgepg-maxZindex-org, 0) + 1 );
 				top: 0px;
 				height: 100%;
 				left: calc( var(--tgepg-timeMarkerOffset) * var(--tgepg-scale) - calc( var(--tgepg-width-timeMarker) / 2 ))
@@ -151,9 +144,13 @@ export class tgEpgProgListDefaults extends tgEpgDefaultsCommon
 
 
 			</style>
-
 			`;
-			var tmp=styles+`
+		return styles	
+		}
+	static get template()
+		{
+		var styles=this.styles;
+		var tmp=styles+`
 			<!-- App -->
 			<div name="timemarker" class="hide"></div>
 			<div class="tgEpgTooltip hide" data-id="-"></div>
@@ -162,6 +159,6 @@ export class tgEpgProgListDefaults extends tgEpgDefaultsCommon
 				</div>
 			<!-- App Ende-->
 				`;
-			return	tmp;
+		return	tmp;
 		}
 	}

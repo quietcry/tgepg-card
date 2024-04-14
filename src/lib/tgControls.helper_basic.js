@@ -534,5 +534,21 @@ export class tgControlsHelperBasic
 		opt=JSON.stringify(org);
 		localStorage.setItem(app, opt);
 		}
-
+	//######################################################################################################################################
+	//
+	//
+	//
+	//######################################################################################################################################
+	_maxZindex(container, filter=[])
+		{
+		if ( this._getType(container, "nodeElement"))
+			{
+			return Array.from(container.querySelectorAll('*'))
+				.filter(a => !filter.includes(a))
+				.map(a => parseFloat(window.getComputedStyle(a).zIndex))
+				.filter(a => !isNaN(a))
+				.sort()
+				.pop()||0;
+			}	
+		}
 	}

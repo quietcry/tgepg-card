@@ -48,6 +48,10 @@ export class tgEpgCard extends tgControls
 		this._info("under construction ;-)", now)
 		var that=this
 		this.detectENV()
+		this.PROPS.run=this._extender(this.PROPS.run||{}, 
+				{
+				zIndexFilter:[]
+				})
 
 		if (this._enable_DataWorker)
 			{
@@ -62,6 +66,7 @@ export class tgEpgCard extends tgControls
 				that.dataWorker.onmessage = function(event) 
 					{
 					that.renderChannels(event.data)
+					that.scrollbarX.restrictions={left:[that.channelBox]}		
 					};
 				function workerRunnerAsString()
 					{
@@ -110,7 +115,7 @@ export class tgEpgCard extends tgControls
 		{
 		var that=this
 
-		this._debug("event", event)	
+		this._log("refresh event", event)	
 		let connected=this.PROPS.run?.states?.connected||false
 		let constructed=this.PROPS.run?.states?.constructed||false
 		let profiled=this.PROPS.run?.states?.profiled||false
@@ -146,7 +151,7 @@ export class tgEpgCard extends tgControls
 		let height=parseInt(run.appHeight)||null
 		if (height && height > 0 )
 			{
-			this.style.setProperty('--tgepg-appHeight-org', `${height}px`);
+			this.style.setProperty('--tgepg-appHeight-calc', `${height}px`);
 			}
 		run["now"]= Math.floor(new Date() / 1000);
 		if ( run.min && run.max)
@@ -158,7 +163,7 @@ export class tgEpgCard extends tgControls
 			//let max= new Date(run.max*1000).toLocaleDateString("de-DE")	+ new Date(run.max*1000).toLocaleTimeString("de-DE")
 			//console.log("run", min, max, run.currentProfile.design.setOfSpan)
 			}
-
+		this.style.setProperty('--tgepg-maxZindex-calc', `${this._maxZindex(this, this.PROPS.run.zIndexFilter)}`);
 		}
 	setCurrentProfile(run)
 		{
@@ -258,6 +263,8 @@ export class tgEpgCard extends tgControls
 		switch (direction)
 			{
 			case "horizontal":
+				console.log("scrollerX")
+
 				if (scrollwidth === null)
 					{
 					if ( !that.PROPS.run.scrollOffset) return	
@@ -275,6 +282,7 @@ export class tgEpgCard extends tgControls
 				this.timeBar.scrollLeft =scrollwidth
 				break;
 			case "vertical":
+				console.log("scrollerY")
 				if (initiator !== "app") this.progListApp.scrollTop =scrollwidth
 				this.channelBox.scrollTop =scrollwidth
 				break;
@@ -352,7 +360,7 @@ export class tgEpgCard extends tgControls
 
 	doQueryElements()
 		{
-	
+		var that=this
 		this.card			= this._shadowRoot.querySelector("ha-card") || this._shadowRoot
 		this.app 			= this.card.querySelector('[name="app"]');
 		if (this.app)
@@ -362,31 +370,21 @@ export class tgEpgCard extends tgControls
 			this.superButton 	= this.app.querySelector('[name="superbutton"]');
 			this.channelBox 	= this.app.querySelector('[name="channelBox"]');
 			this.programBox 	= this.app.querySelector('[name="programBox"]');
-			this.epgOuterBox 	= this.app.querySelector('[name="epgOutBox"]');
-			this.scrollbarX		= this._shadowRoot.querySelector('.tgcontrolscrollbarx');;
-			this.scrollbarY 	= null;
+			this.progList 	 	= this.programBox.querySelector('[name="tgEpgProgList"]');
+			this.scrollBox 		= this.app.querySelector('[name="scrollBox"]');
+			this.epgOutBox 		= this.app.querySelector('[name="epgOutBox"]');
+			this.epgBox 		= this.app.querySelector('[name="epgBox"]');
+			this.scrollbarX		= this.app.querySelector('.scrollbarX');
+			this.scrollbarY		= this.app.querySelector('.scrollbarY');
 			this.floatingMenu 	= this._shadowRoot.querySelector('tg-floatingMenu');
 			this.workerSource 	= this._shadowRoot.querySelector('[name="worker"]');
 			this.epgTooltipp	= null
 			this.epgInfo		= null
 			}
-		//console.debug("query", this.channelBox || "none")
-		// this.buttonCell = this.shadowRoot.querySelector('[name="buttonCell"]');
+		this.PROPS.run.zIndexFilter=[this.scrollbarX, this.scrollbarY]
 
-		// this.epgBox = this.shadowRoot.querySelector('[name="epgBox"]');
-		// this.channelBox = this.shadowRoot.querySelector('[name="channelBox"]');
-		// this.programBox = this.shadowRoot.querySelector('[name="programBox"]');
-		// this.channelListApp = null;
-		// this.progListApp = null;
-		// this.optionBox = this.shadowRoot.querySelector('[name="optionBox"]');
-		// this.scrollbarX = this.shadowRoot.querySelector('.tgcontrolscrollbarx');;
-		// this.timeRow = this.shadowRoot.querySelector('[name="timeRow"]');
-		// this.timeMarker = that.shadowRoot.querySelector('[name="timemarker"]');
-		// this.timebar = card.querySelector(".error")
-		// this._elements.dl = card.querySelector(".dl")
-		// this._elements.topic = card.querySelector(".dt")
-		// this._elements.toggle = card.querySelector(".toggle")
-		// this._elements.value = card.querySelector(".value")
+
+
 		}
 			
 	detectENV()
@@ -419,6 +417,8 @@ export class tgEpgCard extends tgControls
 	//######################################################################################################################################
 	init()
 		{
+		this._log("init")	
+	
 		let that=this;
 		let test;
 		if (this._enable_TimeBar) 		activateTimeBar.call(this);
@@ -470,6 +470,7 @@ export class tgEpgCard extends tgControls
 			if (this._enable_tooltipp)
 				{
 				this.epgTooltipp=_connectToInfoTooltipp('tgepg-tooltipp', this);
+				this.PROPS.run.zIndexFilter.push(this.epgTooltipp)
 				}
 			}
 		function activateEpgInfo()
@@ -477,12 +478,14 @@ export class tgEpgCard extends tgControls
 			this.progListApp.enableEpgInfo = this._enable_epgInfo
 			if (this._enable_epgInfo)
 				{
-				this.epgInfo=_connectToInfoTooltipp('tgepg-info', this);			
+				this.epgInfo=_connectToInfoTooltipp('tgepg-info', this);
+				this.PROPS.run.zIndexFilter.push(this.epgInfo)			
 				}
 			}
 		function activateTimemarker()
 			{
 			this.progListApp.enableTimemarker = this._enable_timemarker
+			this.PROPS.run.zIndexFilter.push(this.progListApp.timeMarker)	
 			}
 		function activateChannellist()
 			{
@@ -549,13 +552,22 @@ export class tgEpgCard extends tgControls
 		function activateScrollbars()
 			{
 			var that=this
-			this.scrollbarX.classList.remove("hide")
-			this.scrollbarX.addEventListener("scrolled",
-				function(event)
-					{
-					that.updateScrollbars("horizontal", this.scrollLeft, "app");
-					});
-			this.dependedApps.push({app:this.scrollbarX});
+			if (this.scrollbarX)
+				{
+				this.scrollbarX.classList.remove("hide")
+				this.scrollbarX.restrictions={left:[this.channelBox]}		
+				this.scrollbarX.connectedTo=this.progList
+				this.scrollbarX.master=[this.programBox, that.timeBar]		
+				this.dependedApps.push({app:this.scrollbarX});
+				}
+			if (this.scrollbarY)
+				{
+				this.scrollbarY.classList.remove("hide")
+				this.scrollbarY.restrictions={right:0}		
+				this.scrollbarY.connectedTo=this.progList	
+				this.scrollbarY.master=this.epgBox		
+				this.dependedApps.push({app:this.scrollbarY});
+				}
 			}
 
 		}
