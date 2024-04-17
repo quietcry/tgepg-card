@@ -52,7 +52,9 @@ export class tgEpgCard extends tgControls
 				{
 				zIndexFilter:[]
 				})
-
+		this.PROPS.run["profiles"]=(this.PROPS.run.profiles)?this.PROPS.run.profiles:{}	
+		this.PROPS.run.profiles["default"]=this._extender({},this.PROPS.defaults.profiles.default)
+		
 		if (this._enable_DataWorker)
 			{
 			function startworker () 
@@ -121,6 +123,11 @@ export class tgEpgCard extends tgControls
 		let profiled=this.PROPS.run?.states?.profiled||false
 		if (!profiled || !connected || !this.app) return
 		this.PROPS.run["currentProfile"]=this._extender({}, this.setCurrentProfile(this.PROPS.run))
+		let css=this.PROPS.run["currentProfile"].design.css||{}
+		for (let key of Object.keys(css))
+			{
+			this.style.setProperty(`--tgepg-${key}-org`, `${css[key]}`);
+			}
 
 		if (!constructed)
 			{
@@ -167,87 +174,40 @@ export class tgEpgCard extends tgControls
 		}
 	setCurrentProfile(run)
 		{
-		var that=this	
-		let userprofile=(run.username && run.profiles?.users )? run.profiles.users[run.username]||{}:{}
-		let profile=this._extender({},run.profiles, userprofile)
-		delete profile.users
-		let options=profile.options||{}
-		let design=this._extender({}, profile.design.default)
-		//that._debug("setCurrentProfile profile", profile, design)
-		if (options.useOrientationDetection)
+		var that=this
+		this._log("profile default", run.profiles.default)
+		this._log("profile custom", run.profiles.custom)
+		this._log("profile user", run.profiles.user)
+		let profile=this._extender({},run.profiles.default, ((this._getBoolean(run.profiles.user.exclusive))?{}:run.profiles.custom), run.profiles.user)
+
+		if (profile.options.useOrientationDetection)
 			{
-			design=this._extender({}, design, getwidthProfile(options.useWidthDetection||false, profile.design[run.orientationObserver.orientation]))	
+			profile=this._extender(profile, profile[run.orientationObserver.orientation]||{})
+			delete profile.portait	
+			delete profile.landscape	
 			}
-		else
+		if (profile.options.useWidthDetection)
 			{
-			design=this._extender({}, design, getwidthProfile(options.useWidthDetection||false, profile.design))
-			}
-		profile["design"]=design
-		let keys=Object.keys(profile)
-		for (let key of keys)
-			{
-			if 	(!["design", "dataWorker", "options"].includes(key))
-				{
-				delete profile[key]	
-				}
-			}
-		keys=Object.keys(profile.design)
-		for (let key of keys)
-			{
-			if 	(key.startsWith("dw_"))
-				{
-				let newKey=	key.slice(3)
-				if (! profile.dataWorker) profile["dataWorker"]={}
-				profile.dataWorker[newKey]=profile.design[key]
-				delete profile.design[key]
-				that._debug("setCurrentProfile key", newKey)
-				}
-			if 	(key.startsWith("op_"))
-				{
-				let newKey=	key.slice(3)
-				if (! profile.options) profile["options"]={}
-				profile.options[newKey]=profile.design[key]
-				delete profile.design[key]
-				that._debug("setCurrentProfile key", newKey)
-				}
+			profile=this._extender(profile, getwidthProfile(profile.design||{}))
+			delete profile.size	
 			}
 
-		that._debug("setCurrentProfile profile2", profile)
+		that._log("setCurrentProfile profile2 design", profile)
 		return profile
 
-		function getwidthProfile(yesNo, profile)
+		function getwidthProfile(profile)
 			{
-			let p=that._extender({}, profile.default)
-			let sizes=[]
-			let noSize={}
+			let sizes=Object.keys(profile.size||{})
 			let width=that.app.clientWidth;
-			let keys=Object.keys(profile)
-			for ( let key of keys)
-				{
-				if (key.match(/^_\d.*$/))
-					{
-					sizes.push(parseInt(key.slice(1)))	
-					}
-				if ( key !== "default" && key !== "portait" && key !== "landscape")	
-					{
-					noSize[key]=profile[key]	
-					}
-				}
-			sizes.sort()
+			sizes = sizes.map((size) => {
+										return parseInt(size.replace(/^_/, ""))
+										}).sort((a, b) => a - b);							
 			let detectedSize=null	
-			if (yesNo)
+			for (let size of sizes)
 				{
-				for (let size of sizes)
-					{
-					if (size<width) detectedSize=size
-					}
-				if (detectedSize) 
-					{
-					p=that._extender(p, profile[`_${detectedSize}`])
-					}
+				if (size<width) detectedSize=size
 				}
-			if (!detectedSize) p=that._extender(p, noSize)
-			return p
+			return (profile?.size)?profile.size[`_${detectedSize}`] || {}:{}
 			}
 		}
 	//#########################################################################################################
@@ -263,7 +223,6 @@ export class tgEpgCard extends tgControls
 		switch (direction)
 			{
 			case "horizontal":
-				console.log("scrollerX")
 
 				if (scrollwidth === null)
 					{
@@ -622,7 +581,7 @@ export class tgEpgCard extends tgControls
 		this.style.setProperty('--tgepg-topBarHeight-org', parseInt(profile.topBarHeight)+"px");
 		this.style.setProperty('--tgepg-channelRowWidth-org', parseInt(profile.channelRowWidth)+"px");
 		this.style.setProperty('--tgepg-channelRowHeight-org', parseInt(profile.channelRowHeight)+"px");
-		this.style.setProperty('--tgepg-scale-org', parseFloat(profile.scale));
+		this.style.setProperty('--tgepg-scale-calc', parseFloat(profile.scale));
 		}
 	//#########################################################################################################
 	//## renderSubApp()
@@ -761,12 +720,14 @@ export class tgEpgCard extends tgControls
 			{
 			that.PROPS.run.userid=that._hass.user.id	
 			that.PROPS.run.username=that._hass.user.name
-			that.setProfile()	
+			this.PROPS.run.profiles["custom"]=this._extender({}, this._config?.profile||{})
+			this.PROPS.run.profiles["user"]=this._extender({}, this._config?.profile?.users[that._hass.user.name]||{})
+			this.PROPS.run.states["profiled"] =true;
+			this.refresh("profiled")
 			}		
 		for (let ent of Object.keys(this._entities))
 			{
 			let state=this.getState(ent)
-			this._debug("state:", state)
 			if (!state)
 				{
 				// this._elements.error.textContent = `${ent} is unavailable.`;
@@ -853,27 +814,7 @@ export class tgEpgCard extends tgControls
 				this.dataWorker.addRequest(workerdata)
 				}
 			}
-	
-
 		}	
-	setProfile()
-		{
-		let width=window.screen.width
-		let height=window.screen.height
-		var defaultProfil=this.PROPS.defaults.profiles.default
-		let design=this._extender({default:defaultProfil.design})
-		for ( let ori of defaultProfil.designOrientations)
-			{
-			design[ori]=this._extender({default:defaultProfil.design})
-			}
-		design=this._extender(design, this._config?.profile?.design||{})
-		this.PROPS.run.profiles=this._extender({},defaultProfil,this._config?.profile||{})
-		this.PROPS.run.profiles["design"]=design
-		this.PROPS.run["states"]["profiled"] =true;
-		var ev = new CustomEvent('profiled');
-		this.dispatchEvent(ev);
-
-		}
 
 
 

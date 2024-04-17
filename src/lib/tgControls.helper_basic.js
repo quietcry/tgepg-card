@@ -200,7 +200,8 @@ export class tgControlsHelperBasic
 		return master(node, query)	
 		function master(node, query)
 			{
-			let target=node.querySelector(query)||(node.shadowRoot)?node.shadowRoot.querySelector(query):null||null
+//			console.log("node.shadowRoot", node, node.shadowRoot)	
+			let target=node.querySelector(query)||(node.shadowRoot && (node.shadowRoot instanceof ShadowRoot))?node.shadowRoot.querySelector(query):null||null
 			if (target) return target
 			node=node.parentElement||node.getRootNode().host
 			return (node)? master(node, query):false

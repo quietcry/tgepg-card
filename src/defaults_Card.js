@@ -1,4 +1,10 @@
 import { tgEpgDefaultsCommon }  from "./defaults_Common.js"
+useDeviceTypeDetection: true
+useDeviceDetection: true
+dataWorker:
+pastTimeSec: 3600
+previewAll: 86400
+viewAllowedOversize: 1800 
 
 export class tgEpgCardDefaults extends tgEpgDefaultsCommon
 	{
@@ -17,6 +23,8 @@ export class tgEpgCardDefaults extends tgEpgDefaultsCommon
 										{
 										useOrientationDetection:false,	
 										useWidthDetection:false,	
+										useDeviceTypeDetection:false,	
+										useDeviceDetection:false,	
 										},	
 									dataWorker:
 										{
@@ -38,9 +46,6 @@ export class tgEpgCardDefaults extends tgEpgDefaultsCommon
 
 										loadReview: 7200,
 										loadPreview: 604800,
-										dw_loadPreviewUnits: ["last", "now", "next", "hour", "today", "tomorow", "hourly"],
-										dw_useLoadUnits: true
-
 										}
 									}
 								}
@@ -73,7 +78,7 @@ export class tgEpgCardDefaults extends tgEpgDefaultsCommon
 			--tgepg-topBarHeight: var( --tgepg-topBarHeight-org, 30px );
 			--tgepg-channelRowWidth: var( --tgepg-channelRowWidth-org, 100px );
 			--tgepg-channelRowHeight: var( --tgepg-channelRowHeight-org, 40px );
-			--tgepg-scale: var( --tgepg-scale-org, 1 );
+			--tgepg-scale: var( --tgepg-scale-calc, 1 );
 			--tgepg-appHeight: var( --tgepg-appHeight-calc, 100% ) ;
 			--tgepg-maxZindex: var(--tgepg-maxZindex-calc, 0) ;
 

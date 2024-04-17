@@ -654,6 +654,8 @@ class tgEpgCard extends (0, _tgControlsJs.tgControls) {
         this.PROPS.run = this._extender(this.PROPS.run || {}, {
             zIndexFilter: []
         });
+        this.PROPS.run["profiles"] = this.PROPS.run.profiles ? this.PROPS.run.profiles : {};
+        this.PROPS.run.profiles["default"] = this._extender({}, this.PROPS.defaults.profiles.default);
         if (this._enable_DataWorker) {
             function startworker() {
                 var workerstringified = "";
@@ -719,6 +721,8 @@ class tgEpgCard extends (0, _tgControlsJs.tgControls) {
         let profiled = this.PROPS.run?.states?.profiled || false;
         if (!profiled || !connected || !this.app) return;
         this.PROPS.run["currentProfile"] = this._extender({}, this.setCurrentProfile(this.PROPS.run));
+        let css = this.PROPS.run["currentProfile"].design.css || {};
+        for (let key of Object.keys(css))this.style.setProperty(`--tgepg-${key}-org`, `${css[key]}`);
         if (!constructed) this.init();
         if (event == "resize") {
             let viewport = document.documentElement;
@@ -747,58 +751,30 @@ class tgEpgCard extends (0, _tgControlsJs.tgControls) {
     }
     setCurrentProfile(run) {
         var that = this;
-        let userprofile = run.username && run.profiles?.users ? run.profiles.users[run.username] || {} : {};
-        let profile = this._extender({}, run.profiles, userprofile);
-        delete profile.users;
-        let options = profile.options || {};
-        let design = this._extender({}, profile.design.default);
-        //that._debug("setCurrentProfile profile", profile, design)
-        if (options.useOrientationDetection) design = this._extender({}, design, getwidthProfile(options.useWidthDetection || false, profile.design[run.orientationObserver.orientation]));
-        else design = this._extender({}, design, getwidthProfile(options.useWidthDetection || false, profile.design));
-        profile["design"] = design;
-        let keys = Object.keys(profile);
-        for (let key of keys)if (![
-            "design",
-            "dataWorker",
-            "options"
-        ].includes(key)) delete profile[key];
-        keys = Object.keys(profile.design);
-        for (let key of keys){
-            if (key.startsWith("dw_")) {
-                let newKey = key.slice(3);
-                if (!profile.dataWorker) profile["dataWorker"] = {};
-                profile.dataWorker[newKey] = profile.design[key];
-                delete profile.design[key];
-                that._debug("setCurrentProfile key", newKey);
-            }
-            if (key.startsWith("op_")) {
-                let newKey = key.slice(3);
-                if (!profile.options) profile["options"] = {};
-                profile.options[newKey] = profile.design[key];
-                delete profile.design[key];
-                that._debug("setCurrentProfile key", newKey);
-            }
+        this._log("profile default", run.profiles.default);
+        this._log("profile custom", run.profiles.custom);
+        this._log("profile user", run.profiles.user);
+        let profile = this._extender({}, run.profiles.default, this._getBoolean(run.profiles.user.exclusive) ? {} : run.profiles.custom, run.profiles.user);
+        if (profile.options.useOrientationDetection) {
+            profile = this._extender(profile, profile[run.orientationObserver.orientation] || {});
+            delete profile.portait;
+            delete profile.landscape;
         }
-        that._debug("setCurrentProfile profile2", profile);
+        if (profile.options.useWidthDetection) {
+            profile = this._extender(profile, getwidthProfile(profile.design || {}));
+            delete profile.size;
+        }
+        that._log("setCurrentProfile profile2 design", profile);
         return profile;
-        function getwidthProfile(yesNo, profile) {
-            let p = that._extender({}, profile.default);
-            let sizes = [];
-            let noSize = {};
+        function getwidthProfile(profile) {
+            let sizes = Object.keys(profile.size || {});
             let width = that.app.clientWidth;
-            let keys = Object.keys(profile);
-            for (let key of keys){
-                if (key.match(/^_\d.*$/)) sizes.push(parseInt(key.slice(1)));
-                if (key !== "default" && key !== "portait" && key !== "landscape") noSize[key] = profile[key];
-            }
-            sizes.sort();
+            sizes = sizes.map((size)=>{
+                return parseInt(size.replace(/^_/, ""));
+            }).sort((a, b)=>a - b);
             let detectedSize = null;
-            if (yesNo) {
-                for (let size of sizes)if (size < width) detectedSize = size;
-                if (detectedSize) p = that._extender(p, profile[`_${detectedSize}`]);
-            }
-            if (!detectedSize) p = that._extender(p, noSize);
-            return p;
+            for (let size of sizes)if (size < width) detectedSize = size;
+            return profile?.size ? profile.size[`_${detectedSize}`] || {} : {};
         }
     }
     //#########################################################################################################
@@ -812,7 +788,6 @@ class tgEpgCard extends (0, _tgControlsJs.tgControls) {
         var that = this;
         switch(direction){
             case "horizontal":
-                console.log("scrollerX");
                 if (scrollwidth === null) {
                     if (!that.PROPS.run.scrollOffset) return;
                     //console.debug("scroller", this.PROPS.run)	
@@ -1110,7 +1085,7 @@ class tgEpgCard extends (0, _tgControlsJs.tgControls) {
         this.style.setProperty("--tgepg-topBarHeight-org", parseInt(profile.topBarHeight) + "px");
         this.style.setProperty("--tgepg-channelRowWidth-org", parseInt(profile.channelRowWidth) + "px");
         this.style.setProperty("--tgepg-channelRowHeight-org", parseInt(profile.channelRowHeight) + "px");
-        this.style.setProperty("--tgepg-scale-org", parseFloat(profile.scale));
+        this.style.setProperty("--tgepg-scale-calc", parseFloat(profile.scale));
     }
     //#########################################################################################################
     //## renderSubApp()
@@ -1204,11 +1179,13 @@ class tgEpgCard extends (0, _tgControlsJs.tgControls) {
         if (that._hass.user.id !== that.PROPS.run.userid) {
             that.PROPS.run.userid = that._hass.user.id;
             that.PROPS.run.username = that._hass.user.name;
-            that.setProfile();
+            this.PROPS.run.profiles["custom"] = this._extender({}, this._config?.profile || {});
+            this.PROPS.run.profiles["user"] = this._extender({}, this._config?.profile?.users[that._hass.user.name] || {});
+            this.PROPS.run.states["profiled"] = true;
+            this.refresh("profiled");
         }
         for (let ent1 of Object.keys(this._entities)){
             let state = this.getState(ent1);
-            this._debug("state:", state);
             if (!state) ;
             else if (!this.PROPS.run.currentProfile) return;
             else if (state.last_changed !== that._entities[ent1].last_changed) {
@@ -1275,23 +1252,6 @@ class tgEpgCard extends (0, _tgControlsJs.tgControls) {
                 this.dataWorker.postMessage(workerdata);
             } else if (this._enable_DataService) this.dataWorker.addRequest(workerdata);
         }
-    }
-    setProfile() {
-        let width = window.screen.width;
-        let height = window.screen.height;
-        var defaultProfil = this.PROPS.defaults.profiles.default;
-        let design = this._extender({
-            default: defaultProfil.design
-        });
-        for (let ori of defaultProfil.designOrientations)design[ori] = this._extender({
-            default: defaultProfil.design
-        });
-        design = this._extender(design, this._config?.profile?.design || {});
-        this.PROPS.run.profiles = this._extender({}, defaultProfil, this._config?.profile || {});
-        this.PROPS.run.profiles["design"] = design;
-        this.PROPS.run["states"]["profiled"] = true;
-        var ev = new CustomEvent("profiled");
-        this.dispatchEvent(ev);
     }
     onClicked() {
         this.doToggle();
@@ -1799,7 +1759,8 @@ class tgControlsHelperBasic {
     _getMasterElement(node, query) {
         return master(node, query);
         function master(node, query) {
-            let target = node.querySelector(query) || node.shadowRoot ? node.shadowRoot.querySelector(query) : null;
+            //			console.log("node.shadowRoot", node, node.shadowRoot)	
+            let target = node.querySelector(query) || node.shadowRoot && node.shadowRoot instanceof ShadowRoot ? node.shadowRoot.querySelector(query) : null;
             if (target) return target;
             node = node.parentElement || node.getRootNode().host;
             return node ? master(node, query) : false;
@@ -2095,7 +2056,9 @@ class tgEpgCardDefaults extends (0, _defaultsCommonJs.tgEpgDefaultsCommon) {
                     default: {
                         options: {
                             useOrientationDetection: false,
-                            useWidthDetection: false
+                            useWidthDetection: false,
+                            useDeviceTypeDetection: false,
+                            useDeviceDetection: false
                         },
                         dataWorker: {
                             pastTimeSec: 3600,
@@ -2114,17 +2077,7 @@ class tgEpgCardDefaults extends (0, _defaultsCommonJs.tgEpgDefaultsCommon) {
                             channelStyle: "icon|text",
                             topBarHeight: 50,
                             loadReview: 7200,
-                            loadPreview: 604800,
-                            dw_loadPreviewUnits: [
-                                "last",
-                                "now",
-                                "next",
-                                "hour",
-                                "today",
-                                "tomorow",
-                                "hourly"
-                            ],
-                            dw_useLoadUnits: true
+                            loadPreview: 604800
                         }
                     }
                 }
@@ -2157,7 +2110,7 @@ class tgEpgCardDefaults extends (0, _defaultsCommonJs.tgEpgDefaultsCommon) {
 			--tgepg-topBarHeight: var( --tgepg-topBarHeight-org, 30px );
 			--tgepg-channelRowWidth: var( --tgepg-channelRowWidth-org, 100px );
 			--tgepg-channelRowHeight: var( --tgepg-channelRowHeight-org, 40px );
-			--tgepg-scale: var( --tgepg-scale-org, 1 );
+			--tgepg-scale: var( --tgepg-scale-calc, 1 );
 			--tgepg-appHeight: var( --tgepg-appHeight-calc, 100% ) ;
 			--tgepg-maxZindex: var(--tgepg-maxZindex-calc, 0) ;
 
