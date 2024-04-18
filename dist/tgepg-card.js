@@ -751,9 +751,6 @@ class tgEpgCard extends (0, _tgControlsJs.tgControls) {
     }
     setCurrentProfile(run) {
         var that = this;
-        this._log("profile default", run.profiles.default);
-        this._log("profile custom", run.profiles.custom);
-        this._log("profile user", run.profiles.user);
         let profile = this._extender({}, run.profiles.default, this._getBoolean(run.profiles.user.exclusive) ? {} : run.profiles.custom, run.profiles.user);
         if (profile.options.useOrientationDetection) {
             profile = this._extender(profile, profile[run.orientationObserver.orientation] || {});
@@ -764,7 +761,7 @@ class tgEpgCard extends (0, _tgControlsJs.tgControls) {
             profile = this._extender(profile, getwidthProfile(profile.design || {}));
             delete profile.size;
         }
-        that._log("setCurrentProfile profile2 design", profile);
+        that._log("setCurrentProfile profile", profile);
         return profile;
         function getwidthProfile(profile) {
             let sizes = Object.keys(profile.size || {});
@@ -1209,23 +1206,11 @@ class tgEpgCard extends (0, _tgControlsJs.tgControls) {
         let interval = 100;
         let maxTimespan = 60000;
         let _now = new Date();
-        //console.info("sendDataToWorker", "prepair")	
         if (!this.PROPS.run?.states?.constructed && _now - now < maxTimespan) {
-            //console.info("sendDataToWorker", "start interval")	
             setInterval(this.sendDataToWorker, interval, now);
             return;
         }
-        // else 
-        // if ( !this.PROPS.run.doUpdateEnts || this.PROPS.run.doUpdateEnts.length == 0)
-        // 	{
-        // 	console.info("sendDataToWorker", "no updates")	
-        // 	return	
-        // 	}
-        let master = null;
-        if (!this.PROPS.run.tooltippmaster) ;
-        else if (this.PROPS.run.tooltippmaster.getAttribute("id")) master = `[id=\"${this.PROPS.run.tooltippmaster.getAttribute("id")}\"]`;
-        else if (this.PROPS.run.tooltippmaster.getAttribute("name")) master = `[name=\"${this.PROPS.run.tooltippmaster.getAttribute("name")}\"]`;
-        else master = this.PROPS.run.tooltippmaster.nodeName.toLowerCase();
+        let master = this.PROPS.run.tooltippmaster ? this.PROPS.run.tooltippmaster.getAttribute("id") ? `[id=\"${this.PROPS.run.tooltippmaster.getAttribute("id")}\"]` : this.PROPS.run.tooltippmaster.getAttribute("name") ? `[name=\"${this.PROPS.run.tooltippmaster.getAttribute("name")}\"]` : this.PROPS.run.tooltippmaster.nodeName.toLowerCase() : null;
         let configs = this._extender({}, this.PROPS.run.currentProfile.dataWorker || {}, {
             adds: this._extender({
                 enableToolTipp: this._enable_tooltipp,
@@ -1243,14 +1228,14 @@ class tgEpgCard extends (0, _tgControlsJs.tgControls) {
                 source: ent1,
                 state: this.getState(ent1)
             });
+            //this._log("configs profile", configs)
             let workerdata = this._extender(this._entities[ent1].attributes, {
                 config: configs
             });
-            this._info("sendDataToWorker doUpdateHass run update", ent1, `${Object.keys(workerdata).length - 1} channels`, workerdata);
-            if (this._enable_DataWorker) {
-                console.debug(this.dataWorker);
-                this.dataWorker.postMessage(workerdata);
-            } else if (this._enable_DataService) this.dataWorker.addRequest(workerdata);
+            //this._log("sendDataToWorker doUpdateHass run update", ent, `${Object.keys(workerdata).length-1} channels`, workerdata)	
+            if (this._enable_DataWorker) //console.debug(this.dataWorker)	
+            this.dataWorker.postMessage(workerdata);
+            else if (this._enable_DataService) this.dataWorker.addRequest(workerdata);
         }
     }
     onClicked() {
@@ -2778,6 +2763,7 @@ class tgEpgDataService {
         function _isValidChannel(channels, newChannel, source, tmpl, filter) {
             let srcData = that._getType(newChannel, "jsonstring") ? that._JSONcorrector(newChannel) : "";
             if (that._getType(srcData, "hash") && srcData.channeldata && srcData.epg) return _createChannelItem(channels, srcData, source, tmpl, filter);
+            return false;
         }
         //###############################
         //###############################
@@ -2880,6 +2866,11 @@ class tgEpgDataService {
         function _createChannelItem(channels, srcData, source, tmpl, filter) {
             let id = srcData.channeldata.channelid;
             let channelkey = `${source}_${id}`;
+            if (_isBlacklisted([
+                srcData.channeldata.name,
+                srcData.channeldata.channelid,
+                source
+            ])) return false;
             if (!channels.data[channelkey]) channels.data[channelkey] = that._extender({}, tmpl);
             let channel = channels.data[channelkey];
             channel["sourceID"] = source;
@@ -2895,11 +2886,7 @@ class tgEpgDataService {
                 "epg"
             ]);
             let lastUpdate = Math.floor(Date.parse(srcData.channeldata.lastUpdate || 0) / 1000);
-            if ((lastUpdate || 0) <= (channel.lastUpdate || 0) || _isBlacklisted([
-                channel["name"],
-                channel["channelID"],
-                channel["sourceID"]
-            ])) return false;
+            if ((lastUpdate || 0) <= (channel.lastUpdate || 0)) return false;
             channel["lastUpdate"] = lastUpdate;
             return channel;
         }
@@ -2907,22 +2894,14 @@ class tgEpgDataService {
         // ###############################
         function _isBlacklisted(stack) {
             let blacklist = that._getType(that.basicConfig.blacklist, "array") ? that.basicConfig.blacklist : [];
-            let bool = null;
+            let stackstring = stack.join("|");
             for (let item of blacklist){
                 let myitem = item.startsWith("<!not>") ? item.slice(6) : item;
                 let re = new RegExp(myitem, "g");
                 let str = "";
-                for (let hay of stack){
-                    let _bool = re.test(hay);
-                    if (item == myitem) {
-                        if (_bool === true) return true;
-                        bool = _bool;
-                    } else bool = bool == null ? _bool : bool === true ? true : _bool;
-                }
-                bool = item == myitem ? bool : bool ? false : true;
-                if (bool) return bool;
+                if (re.test(stackstring)) return item == myitem ? true : false;
             }
-            return bool;
+            return false;
         }
     // ###############################
     // ###############################

@@ -175,9 +175,6 @@ export class tgEpgCard extends tgControls
 	setCurrentProfile(run)
 		{
 		var that=this
-		this._log("profile default", run.profiles.default)
-		this._log("profile custom", run.profiles.custom)
-		this._log("profile user", run.profiles.user)
 		let profile=this._extender({},run.profiles.default, ((this._getBoolean(run.profiles.user.exclusive))?{}:run.profiles.custom), run.profiles.user)
 
 		if (profile.options.useOrientationDetection)
@@ -192,7 +189,7 @@ export class tgEpgCard extends tgControls
 			delete profile.size	
 			}
 
-		that._log("setCurrentProfile profile2 design", profile)
+		that._log("setCurrentProfile profile", profile)
 		return profile
 
 		function getwidthProfile(profile)
@@ -767,46 +764,31 @@ export class tgEpgCard extends tgControls
 		let interval=100
 		let maxTimespan=60*1000
 		let _now=new Date()
-		//console.info("sendDataToWorker", "prepair")	
+
 		if 	((!this.PROPS.run?.states?.constructed) && (_now-now < maxTimespan))
 			{
-			//console.info("sendDataToWorker", "start interval")	
 			setInterval(this.sendDataToWorker, interval, now)
 			return	
 			}
-		// else 
-		// if ( !this.PROPS.run.doUpdateEnts || this.PROPS.run.doUpdateEnts.length == 0)
-		// 	{
-		// 	console.info("sendDataToWorker", "no updates")	
-		// 	return	
-		// 	}
-		let master=null
-		if ( !this.PROPS.run.tooltippmaster)
-			{
-			}
-		else if (this.PROPS.run.tooltippmaster.getAttribute("id"))
-			{
-			master=`[id=\"${this.PROPS.run.tooltippmaster.getAttribute("id")}\"]`
-			}	
-		else if (this.PROPS.run.tooltippmaster.getAttribute("name"))
-			{
-			master=`[name=\"${this.PROPS.run.tooltippmaster.getAttribute("name")}\"]`
-			}
-		else
-			{
-			master=this.PROPS.run.tooltippmaster.nodeName.toLowerCase()	
-			}		
+
+		let master=(this.PROPS.run.tooltippmaster)?
+			(this.PROPS.run.tooltippmaster.getAttribute("id"))?`[id=\"${this.PROPS.run.tooltippmaster.getAttribute("id")}\"]`:
+			(this.PROPS.run.tooltippmaster.getAttribute("name"))?`[name=\"${this.PROPS.run.tooltippmaster.getAttribute("name")}\"]`:
+			this.PROPS.run.tooltippmaster.nodeName.toLowerCase():
+			null
+	
 		let configs=this._extender({},this.PROPS.run.currentProfile.dataWorker||{}, {adds:this._extender({enableToolTipp:this._enable_tooltipp, master: master}, this.PROPS.run.ENV)})
 		let ents=[...this.PROPS.run.doUpdateEnts||[]]
 		for (let ent of ents)
 			{
 			this.PROPS.run.doUpdateEnts = this.PROPS.run.doUpdateEnts.filter(function(e) { return e !== ent })			
 			configs=this._extender(configs,{source:ent, state:this.getState(ent)})
+			//this._log("configs profile", configs)
 			let workerdata=this._extender(this._entities[ent].attributes, {config:configs})
-			this._info("sendDataToWorker doUpdateHass run update", ent, `${Object.keys(workerdata).length-1} channels`, workerdata)	
+			//this._log("sendDataToWorker doUpdateHass run update", ent, `${Object.keys(workerdata).length-1} channels`, workerdata)	
 			if (this._enable_DataWorker)
 				{
-				console.debug(this.dataWorker)	
+				//console.debug(this.dataWorker)	
 				this.dataWorker.postMessage(workerdata)
 				}
 			else if (this._enable_DataService)

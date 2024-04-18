@@ -1,0 +1,109 @@
+type: custom:tgepg-card
+entity: sensor.vdr_epg_info
+profile:
+  options:
+    useOrientationDetection: true
+    useWidthDetection: true
+    useDeviceTypeDetection: true
+    useDeviceDetection: true
+  dataWorker:
+    pastTimeSec: 3600
+    previewAll: 86400
+    viewAllowedOversize: 1800
+    blacklist:
+      - RTL
+      - VOX
+      - BILD
+      - tagesschau
+      - DF
+      - Anixe
+      - Main
+      - Bibel
+
+  design:
+    customDesign: true
+    previewSpan: 14400
+    setOfSpan: 1800
+    channelRowWidth: 220
+    channelRowHeight: 50
+    channelStyle: icon|text
+    topBarHeight: 50
+    loadReview: 7200
+    loadPreview: 604800
+    size:
+      _0:
+        design:
+          previewSpan: 3600
+      _500:
+        design:
+          previewSpan: 7200
+      _1000:
+        design:
+          previewSpan: 14400
+    css:
+      topBarHeight: 30px
+      channelRowWidth: 100px
+      channelRowHeight: 40px
+      bgcolor-primary-dark: '#0288d1'
+      bgcolor-primary-light: '#b3e5fc'
+      textcolor-primary-dark: '#212121'
+      textcolor-primary-light: '#212121'
+      timeBarBorder: 1px solid black
+      scrollbarActiv-BgColor: lightgray
+      scrollbarActiv-ThumbColor: red transparent
+      scrollbarActiv-Width: 15px
+      scrollbarActiv-Visibility: visible
+      scrollbarPassive-BgColor: lightgray
+      scrollbarPassive-ThumbColor: pink transparent
+      scrollbarPassive-Width: 6px
+      scrollbarPassive-ThumbWidth: 3px
+      scrollbarPassive-Visibility: visible
+      bgcolor-secondary-dark: '#727272'
+      bgcolor-secondary-light: '#bdbdbd'
+      textcolor-secondary-dark: '#212121'
+      textcolor-secondary-light: '#212121'
+      bgcolor-channel-dark: red
+      bgcolor-channel-light: blue
+      textcolor-channel-dark: '#ffffff'
+      textcolor-channel-light: '#ffffff'
+      color-divider: 'rgba(0: 0: 0: 0.12)'
+      width-timeMarker: 2px
+      color-timeMarker: red
+      borderheight-channelline: 3px
+      bordercolor-channelline: 'rgba(0: 0: 0: 0.38)'
+  users:
+    michael:
+      exclusive: true
+      options:
+        useOrientationDetection: true
+        useWidthDetection: true
+        useDeviceTypeDetection: true
+        useDeviceDetection: true
+        dataWorker:
+          pastTimeSec: 3600
+          previewAll: 86400
+          viewAllowedOversize: 1800
+          blacklist:
+            - RTL
+            - VOX
+            - BILD
+            - tagesschau
+            - DF
+            - Anixe
+            - Main
+            - Bibel
+      design:
+        channelRowWidth: 100
+        userDesign: true
+        size:
+          _0:
+            design:
+              previewSpan: 3600
+          _500:
+            design:
+              previewSpan: 7200
+          _1000:
+            design:
+              previewSpan: 14400
+        css:
+          topBarHeight: 80px

@@ -348,6 +348,7 @@ export class tgEpgDataService
 				{
 				return _createChannelItem(channels, srcData, source, tmpl , filter )
 				}
+			return false	
 			}
         //###############################
         //###############################
@@ -472,6 +473,10 @@ export class tgEpgDataService
 			{
 			let id = srcData.channeldata.channelid
 			let channelkey = `${source}_${id}`;
+			if (_isBlacklisted([srcData.channeldata.name, srcData.channeldata.channelid, source ]))
+				{
+				return false;	
+				}
 			if (!channels.data[channelkey]) 
 				{
 				channels.data[channelkey] = that._extender({}, tmpl)
@@ -488,7 +493,7 @@ export class tgEpgDataService
 			channel["usedItems"]=[]
 			_cleanChannel(channel, filter, ["epg"])
 			let lastUpdate=Math.floor(Date.parse(srcData.channeldata.lastUpdate||0)/1000)
-			if (((lastUpdate||0) <= (channel.lastUpdate||0)) || _isBlacklisted([channel["name"], channel["channelID"], channel["sourceID"] ]))
+			if (((lastUpdate||0) <= (channel.lastUpdate||0)))
 				{
 				return false;	
 				}
@@ -500,32 +505,18 @@ export class tgEpgDataService
 		function _isBlacklisted(stack)
 			{
 			let blacklist=that._getType(that.basicConfig.blacklist, "array")?that.basicConfig.blacklist:[]
-			let bool=null	
+			let stackstring=stack.join("|")	
 			for ( let item of blacklist)
 				{
 				let myitem=(item.startsWith("<!not>"))?item.slice(6):item
 				let re = new RegExp(myitem, "g")
 				let str=""
-				for ( let hay of stack)
+				if (re.test(stackstring))
 					{
-					let _bool=re.test(hay)
-					if 	(item==myitem) 
-						{	
-						if (_bool === true) 
-							{
-							return true	
-							}
-						bool=_bool	
-						}
-					else
-						{	
-						bool=(bool==null)?_bool:(bool === true)?true:_bool
-						}	
-					}
-				bool=(item==myitem)?bool:(bool)?false:true
-				if (bool) return bool	
-				}	
-			return bool
+					return 	(item==myitem)?true:false
+					}	
+				}
+			return false
 			}
         // ###############################
         // ###############################
