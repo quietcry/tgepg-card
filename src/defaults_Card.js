@@ -32,17 +32,29 @@ export class tgEpgCardDefaults extends tgEpgDefaultsCommon
 										previewAll: (0.5*24*60*60),
 										viewAllowedOversize: (0.5*60*60)	
 										},			
-									designOrientations:["portait", "landscape"],	
+									designOrientations:["portait", "landscape"],
+
 									design:
 										{
 										previewSpan:14400,  //tatsächlich angezeigten Minuten im Fenster
 										setOfSpan:1800, //Versatz der Ansicht nach rechts damit der Zeitzeiger nicht am Fensterand steht
-
+										genre:
+											{
+											10:"blue",
+											20:"blue",
+											50: "pink",
+											70:"yellow",
+											80:"orange",
+											82:"orange",
+											90:"brown",
+											a5:"lightblue",
+											},
+										genreStripeWidth:3,	
 										channelRowWidth:120,
 										channelRowHeight:35,								
 										channelStyle:"icon|text",
 
-										topBarHeight:50,
+										topBarHeight:40,
 
 										loadReview: 7200,
 										loadPreview: 604800,
@@ -107,7 +119,7 @@ export class tgEpgCardDefaults extends tgEpgDefaultsCommon
 			--tgepg-bgcolor-channel-light: var(--tgepg-bgcolor-channel-light-org,  var( --blue-grey-color, #0288d1));
 			--tgepg-textcolor-channel-dark: var(--tgepg-textcolor-channel-dark-org,  var( --text-primary-color, #ffffff));
 			--tgepg-textcolor-channel-light: var(--tgepg-textcolor-channel-light-org,  var( --text-primary-color, #ffffff));
-
+			--tgepg-genreStripeWidth: var(--tgepg-genreStripeWidth-org, 2px)
 
 			--tgepg-color-divider: var(--tgepg-color-divider-org,  var( --divider-color, rgba(0, 0, 0, 0.12)));
 			--tgepg-width-timeMarker: var(--tgepg-width-timeMarker-org,  2px);

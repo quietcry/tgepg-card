@@ -65,15 +65,20 @@ export class tgEpgDataService
                 TITLE: ["TITLE", "TITLE"],
                 SUBTITLE: ["SUBTITLE", "SUBTITLE"],
 				DESCRIPTION:["DESCRIPTION", "DESCRIPTION"],
+				GENRE:["GENRE", "GENRE"],
+				EVENTID:["EVENTID", "EVENTID"],
+				ENTITIE:["ENTITIE", "ENTITIE", "entitie"],
 				adds:["ADDS", "adds", "ADDS"],
                 },
-            showTemplate: `<tgepg-progitem class="TabCell" span="<!DURATION!>" <!ADDS!> start="<!START!>" end="<!END!>" channelid="<!CHANNELID!>" id="<!ID!>" style="--progItemSpan: <!DURATION!>px;">
+            showTemplate: `<tgepg-progitem class="TabCell genre_<!GENRE!>" entitie="<!ENTITIE!>" span="<!DURATION!>" <!ADDS!> start="<!START!>" end="<!END!>" channelid="<!CHANNELID!>" id="<!ID!>" eventid="<!EVENTID!>" style="--progItemSpan: <!DURATION!>px;">
 							<div name="title" slot="titleslot"><!TITLE!></div>
 							<div name="subtitle" slot="subtitleslot"><!SUBTITLE!></div>
 							<div name="description" slot="descriptionslot"><!DESCRIPTION!></div>
 							<div name="start" slot="startslot" content="time"><!START!></div>
 							<div name="end" slot="endslot" content="time"><!END!></div>
 							<div name="date" slot="noslot" content="date"><!START!></div>
+							<div name="genre" slot="genreslot" content="genre"><!GENRE!></div>
+
 							</tgepg-progitem>`,
             channelTemplate: `<tgepg-progline class="TabCell" <!ADDS!> channelid="<!CHANNELID!>" id="<!ID!>"><!SHOWTEMPLATE!></tgepg-progline>`,
             };
@@ -116,6 +121,7 @@ export class tgEpgDataService
 	addRequest(data)
         {
         var that = this;
+		this._debug("dataworker: received Workerdate", data)
 		that.channels["todolist"]={}
 		var now = Math.floor(new Date() / 1000);
 
@@ -210,7 +216,7 @@ export class tgEpgDataService
 
 		if (that.me)
 			{
-			that._debug("dataworker send WorkerData", result)
+			that._debug("dataworker: send WorkerData", result)
 			that.sendDataBack(result)	
 			}
 		else
@@ -259,6 +265,8 @@ export class tgEpgDataService
 				show["_duration"]=show.duration
 				show["_end"]=show.end
 				show["adds"]=channel.adds
+				show["entitie"]=channel.sourceID
+				//console.log("Show::", show, channel)
 
 
 				if (show.end > filter.past && show.start < filter.past)

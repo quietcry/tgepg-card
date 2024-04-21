@@ -133,15 +133,45 @@ export class tgEpgCard extends tgControls
 			{
 			this.init()		
 			}
-
+		switch (event)
+			{
+			case "resize":
+				let viewport=document.documentElement;
+				if (viewport)
+					{
+					this.PROPS.run["appHeight"]=viewport.getBoundingClientRect().height-this.getBoundingClientRect().top	-5	
+					}		
+				break;
+			case "refresh":
+				this.PROPS.run.timers=this.PROPS.run.timers||{}
+				for (let ID of Object.keys(this.PROPS.run.timers))
+					{
+					let item=this.progList._shadowRoot.querySelector(`tgepg-progitem[entitie="${this.PROPS.run.timers[ID]["entitie"]}"][eventid="${this.PROPS.run.timers[ID]["eventid"]}"]`)	
+					if (item)
+						{
+						if (this.PROPS.run.timers[ID]["isUsed"])
+							{
+							item.classList.add("record")
+							}
+						else
+							{
+							item.classList.remove("record")	
+							}
+						this._log("recorditem", item)		
+						}
+					}
+				break;	
+			case "profiled":
+				let genres=this.PROPS.run?.currentProfile?.design?.genre||{}
+				for (let key of Object.keys(genres))
+					{
+					this.style.setProperty(`--tgepg-genrecolor-${key.toUpperCase()}-org`, `${genres[key]}`);
+					}
+				break;
+				
+			}
 		if (event=="resize")
 			{
-			let viewport=document.documentElement;
-			if (viewport)
-				{
-//				this._info("event resize detected", this.app.offsetHeight || null, viewport.getBoundingClientRect(), this.getBoundingClientRect())	
-				this.PROPS.run["appHeight"]=viewport.getBoundingClientRect().height-this.getBoundingClientRect().top	-5	
-				}	
 			}	
 		this.calculate()
 		this.refreshAppSizeAfterResizeOrInit()
@@ -578,6 +608,7 @@ export class tgEpgCard extends tgControls
 		this.style.setProperty('--tgepg-topBarHeight-org', parseInt(profile.topBarHeight)+"px");
 		this.style.setProperty('--tgepg-channelRowWidth-org', parseInt(profile.channelRowWidth)+"px");
 		this.style.setProperty('--tgepg-channelRowHeight-org', parseInt(profile.channelRowHeight)+"px");
+		this.style.setProperty('--tgepg-genreStripeWidth-org', parseInt(profile.genreStripeWidth)+"px");
 		this.style.setProperty('--tgepg-scale-calc', parseFloat(profile.scale));
 		}
 	//#########################################################################################################
@@ -744,9 +775,25 @@ export class tgEpgCard extends tgControls
 				if ( !this.PROPS.run.doUpdateEnts.includes(ent))
 					{
 					this.PROPS.run.doUpdateEnts.push(ent)
+					this.PROPS.run.timers=this.PROPS.run.timers||{}
+					for ( let key of Object.keys(this.PROPS.run.timers))
+						{
+						if (key.startsWith(ent))
+							{
+							this.PROPS.run.timers[key]["isUsed"]=false
+							}
+						}
+					let timers=this._JSONcorrector(this._entities[ent].attributes.timers||"[]")	
+					for ( let timer of timers)
+						{
+						let id=`${ent}_${timer.eventid||"noID"}`
+						this._log("timers", this.PROPS.run.timers)
+						this.PROPS.run.timers[id]=this._extender({},timer,{isUsed:true, entitie:ent})
+						}
 					}
 				}
 			}
+
 		this.sendDataToWorker()	
 		this._debug("doUpdateHass profile", this.PROPS.run.currentProfile)	
 		}

@@ -63,9 +63,9 @@ export class tgEpgProgListDefaults extends tgEpgDefaultsCommon
 				{
 				border-top: var( --tgepg-borderheight-channelline ) solid var(--tgepg-bordercolor-channelline);
 				border-bottom: var( --tgepg-borderheight-channelline ) solid var(--tgepg-bordercolor-channelline);
-				min-height: calc( var(--tgepg-channelRowHeight) * 1 );
-				max-height: calc( var(--tgepg-channelRowHeight) * 1 );
-				height: calc( var(--tgepg-channelRowHeight) * 1 );
+				min-height: var(--tgepg-channelRowHeight);
+				max-height: var(--tgepg-channelRowHeight);
+				height: var(--tgepg-channelRowHeight);
 
 				}
 			[name="app"] > .TabRow > .TabCell

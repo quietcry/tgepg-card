@@ -724,11 +724,28 @@ class tgEpgCard extends (0, _tgControlsJs.tgControls) {
         let css = this.PROPS.run["currentProfile"].design.css || {};
         for (let key of Object.keys(css))this.style.setProperty(`--tgepg-${key}-org`, `${css[key]}`);
         if (!constructed) this.init();
-        if (event == "resize") {
-            let viewport = document.documentElement;
-            if (viewport) //				this._info("event resize detected", this.app.offsetHeight || null, viewport.getBoundingClientRect(), this.getBoundingClientRect())	
-            this.PROPS.run["appHeight"] = viewport.getBoundingClientRect().height - this.getBoundingClientRect().top - 5;
+        switch(event){
+            case "resize":
+                let viewport = document.documentElement;
+                if (viewport) this.PROPS.run["appHeight"] = viewport.getBoundingClientRect().height - this.getBoundingClientRect().top - 5;
+                break;
+            case "refresh":
+                this.PROPS.run.timers = this.PROPS.run.timers || {};
+                for (let ID of Object.keys(this.PROPS.run.timers)){
+                    let item = this.progList._shadowRoot.querySelector(`tgepg-progitem[entitie="${this.PROPS.run.timers[ID]["entitie"]}"][eventid="${this.PROPS.run.timers[ID]["eventid"]}"]`);
+                    if (item) {
+                        if (this.PROPS.run.timers[ID]["isUsed"]) item.classList.add("record");
+                        else item.classList.remove("record");
+                        this._log("recorditem", item);
+                    }
+                }
+                break;
+            case "profiled":
+                let genres = this.PROPS.run?.currentProfile?.design?.genre || {};
+                for (let key of Object.keys(genres))this.style.setProperty(`--tgepg-genrecolor-${key.toUpperCase()}-org`, `${genres[key]}`);
+                break;
         }
+        event;
         this.calculate();
         this.refreshAppSizeAfterResizeOrInit();
         this.updateScrollbars("horizontal");
@@ -1082,6 +1099,7 @@ class tgEpgCard extends (0, _tgControlsJs.tgControls) {
         this.style.setProperty("--tgepg-topBarHeight-org", parseInt(profile.topBarHeight) + "px");
         this.style.setProperty("--tgepg-channelRowWidth-org", parseInt(profile.channelRowWidth) + "px");
         this.style.setProperty("--tgepg-channelRowHeight-org", parseInt(profile.channelRowHeight) + "px");
+        this.style.setProperty("--tgepg-genreStripeWidth-org", parseInt(profile.genreStripeWidth) + "px");
         this.style.setProperty("--tgepg-scale-calc", parseFloat(profile.scale));
     }
     //#########################################################################################################
@@ -1190,7 +1208,20 @@ class tgEpgCard extends (0, _tgControlsJs.tgControls) {
                 that._entities[ent1].last_changed = state.last_changed;
                 that._entities[ent1].id = state.entity_id;
                 that._entities[ent1].attributes = that._extender({}, state.attributes || {});
-                if (!this.PROPS.run.doUpdateEnts.includes(ent1)) this.PROPS.run.doUpdateEnts.push(ent1);
+                if (!this.PROPS.run.doUpdateEnts.includes(ent1)) {
+                    this.PROPS.run.doUpdateEnts.push(ent1);
+                    this.PROPS.run.timers = this.PROPS.run.timers || {};
+                    for (let key of Object.keys(this.PROPS.run.timers))if (key.startsWith(ent1)) this.PROPS.run.timers[key]["isUsed"] = false;
+                    let timers = this._JSONcorrector(this._entities[ent1].attributes.timers || "[]");
+                    for (let timer of timers){
+                        let id = `${ent1}_${timer.eventid || "noID"}`;
+                        this._log("timers", this.PROPS.run.timers);
+                        this.PROPS.run.timers[id] = this._extender({}, timer, {
+                            isUsed: true,
+                            entitie: ent1
+                        });
+                    }
+                }
             }
         }
         this.sendDataToWorker();
@@ -1552,6 +1583,10 @@ class tgControls extends HTMLElement {
     //######################################################################################################################################
     _maxZindex() {
         return this.helper._maxZindex.apply(this.helper, arguments);
+    }
+    //######################################################################################################################################
+    _JSONcorrector() {
+        return this.helper._JSONcorrector.apply(this.helper, arguments);
     }
 }
 
@@ -2057,10 +2092,21 @@ class tgEpgCardDefaults extends (0, _defaultsCommonJs.tgEpgDefaultsCommon) {
                         design: {
                             previewSpan: 14400,
                             setOfSpan: 1800,
+                            genre: {
+                                10: "blue",
+                                20: "blue",
+                                50: "pink",
+                                70: "yellow",
+                                80: "orange",
+                                82: "orange",
+                                90: "brown",
+                                a5: "lightblue"
+                            },
+                            genreStripeWidth: 3,
                             channelRowWidth: 120,
                             channelRowHeight: 35,
                             channelStyle: "icon|text",
-                            topBarHeight: 50,
+                            topBarHeight: 40,
                             loadReview: 7200,
                             loadPreview: 604800
                         }
@@ -2124,7 +2170,7 @@ class tgEpgCardDefaults extends (0, _defaultsCommonJs.tgEpgDefaultsCommon) {
 			--tgepg-bgcolor-channel-light: var(--tgepg-bgcolor-channel-light-org,  var( --blue-grey-color, #0288d1));
 			--tgepg-textcolor-channel-dark: var(--tgepg-textcolor-channel-dark-org,  var( --text-primary-color, #ffffff));
 			--tgepg-textcolor-channel-light: var(--tgepg-textcolor-channel-light-org,  var( --text-primary-color, #ffffff));
-
+			--tgepg-genreStripeWidth: var(--tgepg-genreStripeWidth-org, 2px)
 
 			--tgepg-color-divider: var(--tgepg-color-divider-org,  var( --divider-color, rgba(0, 0, 0, 0.12)));
 			--tgepg-width-timeMarker: var(--tgepg-width-timeMarker-org,  2px);
@@ -2528,19 +2574,34 @@ class tgEpgDataService {
                     "DESCRIPTION",
                     "DESCRIPTION"
                 ],
+                GENRE: [
+                    "GENRE",
+                    "GENRE"
+                ],
+                EVENTID: [
+                    "EVENTID",
+                    "EVENTID"
+                ],
+                ENTITIE: [
+                    "ENTITIE",
+                    "ENTITIE",
+                    "entitie"
+                ],
                 adds: [
                     "ADDS",
                     "adds",
                     "ADDS"
                 ]
             },
-            showTemplate: `<tgepg-progitem class="TabCell" span="<!DURATION!>" <!ADDS!> start="<!START!>" end="<!END!>" channelid="<!CHANNELID!>" id="<!ID!>" style="--progItemSpan: <!DURATION!>px;">
+            showTemplate: `<tgepg-progitem class="TabCell genre_<!GENRE!>" entitie="<!ENTITIE!>" span="<!DURATION!>" <!ADDS!> start="<!START!>" end="<!END!>" channelid="<!CHANNELID!>" id="<!ID!>" eventid="<!EVENTID!>" style="--progItemSpan: <!DURATION!>px;">
 							<div name="title" slot="titleslot"><!TITLE!></div>
 							<div name="subtitle" slot="subtitleslot"><!SUBTITLE!></div>
 							<div name="description" slot="descriptionslot"><!DESCRIPTION!></div>
 							<div name="start" slot="startslot" content="time"><!START!></div>
 							<div name="end" slot="endslot" content="time"><!END!></div>
 							<div name="date" slot="noslot" content="date"><!START!></div>
+							<div name="genre" slot="genreslot" content="genre"><!GENRE!></div>
+
 							</tgepg-progitem>`,
             channelTemplate: `<tgepg-progline class="TabCell" <!ADDS!> channelid="<!CHANNELID!>" id="<!ID!>"><!SHOWTEMPLATE!></tgepg-progline>`
         };
@@ -2576,6 +2637,7 @@ class tgEpgDataService {
     }
     addRequest(data) {
         var that = this;
+        this._debug("dataworker: received Workerdate", data);
         that.channels["todolist"] = {};
         var now = Math.floor(new Date() / 1000);
         if (data.config && this._getType(data.config, "hash")) this.basicConfig = this._extender(this.basicConfig, data.config);
@@ -2658,7 +2720,7 @@ class tgEpgDataService {
             now: filter.now
         });
         if (that.me) {
-            that._debug("dataworker send WorkerData", result);
+            that._debug("dataworker: send WorkerData", result);
             that.sendDataBack(result);
         } else //that._debug("send WorkerData manager", result)		
         return result;
@@ -2696,6 +2758,8 @@ class tgEpgDataService {
                 show["_duration"] = show.duration;
                 show["_end"] = show.end;
                 show["adds"] = channel.adds;
+                show["entitie"] = channel.sourceID;
+                //console.log("Show::", show, channel)
                 if (show.end > filter.past && show.start < filter.past) {
                     show._start = filter.past;
                     show._duration = show._end - show._start;
@@ -4381,9 +4445,9 @@ class tgEpgProgListDefaults extends (0, _defaultsCommonJs.tgEpgDefaultsCommon) {
 				{
 				border-top: var( --tgepg-borderheight-channelline ) solid var(--tgepg-bordercolor-channelline);
 				border-bottom: var( --tgepg-borderheight-channelline ) solid var(--tgepg-bordercolor-channelline);
-				min-height: calc( var(--tgepg-channelRowHeight) * 1 );
-				max-height: calc( var(--tgepg-channelRowHeight) * 1 );
-				height: calc( var(--tgepg-channelRowHeight) * 1 );
+				min-height: var(--tgepg-channelRowHeight);
+				max-height: var(--tgepg-channelRowHeight);
+				height: var(--tgepg-channelRowHeight);
 
 				}
 			[name="app"] > .TabRow > .TabCell
@@ -4558,6 +4622,15 @@ class tgEpgProgItem extends (0, _tgControlsJs.tgControls) {
     //######################################################################################################################################
     connectedCallback() {
         var that = this;
+        let box = this.app.querySelector('div[name="genrebox"]');
+        let genres = this.app.querySelector('slot[name="genreslot"]').assignedElements();
+        let html = genres[0] ? genres[0].innerHTML : "";
+        genres = html.replace(/<!--.*?!-->/gm, "").replace(/[^\d|\s|(A-Z0-9)]+/gm, "");
+        genres = genres != "" ? genres.split(" ") : [];
+        for (let genre of genres){
+            let gen = this._htmlToElement(`<div name="genre" style="background-color: var( --tgepg-genrecolor-${genre}-org, transparent) "></div>`);
+            box.appendChild(gen);
+        }
         if (this.PROPS.run.connected === 0) {
             this.activateToolTipp();
             this.connected();
@@ -4742,6 +4815,11 @@ class tgEpgProgItemDefaults extends (0, _defaultsCommonJs.tgEpgDefaultsCommon) {
 				width:     calc( var(--progItemSpan, 0) *  var(--tgepg-scale) ) !important;
 				max-width: calc( var(--progItemSpan, 0) *  var(--tgepg-scale) ) !important;
 				min-width: calc( var(--progItemSpan, 0) *  var(--tgepg-scale) ) !important;
+				--padding: 2px;
+				--paddingLeft: var(--padding);
+				--paddingRight: var(--padding);
+				--paddingTop: var(--padding);
+				--paddingBottom: var(--padding);
 				white-space: nowrap;
 				margin:0px;
 				padding:0px;
@@ -4756,9 +4834,13 @@ class tgEpgProgItemDefaults extends (0, _defaultsCommonJs.tgEpgDefaultsCommon) {
 				height: 100%;
 				max-height: 100%;
 				}
-
+			:host(.record)
+				{
+				background-color: red !important;	
+				}
 			[name="app"]
 				{
+				position: relative;	
 				overflow:hidden;
 				display:inline-box;
 				/*width:100%;*/
@@ -4766,20 +4848,50 @@ class tgEpgProgItemDefaults extends (0, _defaultsCommonJs.tgEpgDefaultsCommon) {
 				border-radius: 1;
 				border-right: 1px solid black;
 				vertical-align: middle;
-				padding:2px;
+				padding:var(--paddingLeft) var(--paddingRight) var(--paddingTop) var(--paddingBottom);
 				}
+				
 			[name="app"]>slot
 				{
-				width:100%;
-				height:100%;
-				text-align: center;
 				position:relative;
+				margin:0px;
+				padding:0px;
+				z-index:1;
+				}
+			[name="genrebox"],
+			slot[name="titleslot"]
+				{
+				width: calc(100% - var(--paddingLeft) - var(--paddingRight));
+				}
+			[name="genrebox"]
+				{
+				width: calc(100% - var(--paddingLeft) - var(--paddingRight));
+				top: 2px;
+				position:absolute;
+				display: block;
+				z-index:0;
+				}
+			[name="genrebox"] > div[name="genre"]
+				{
+				width:100%;
+				height: var(--tgepg-genreStripeWidth-org, 1px);
+				position:relative;
+				margin: 1px auto auto auto;
+				}
+			slot[name="genreslot"]
+				{
+				top: 0px;
+				left:0px;
+				position: absolute;	
+				}
+			slot[name="titleslot"]
+				{
+				height: calc(100% - var(--paddingTop) - var(--paddingBottom));
+				text-align: center;
 				vertical-align: middle;
 				display:flex;
 				text-overflow:clip;
 				justify-content: center; align-items: center;
-				margin:0px;
-				padding:0px;
 				}
 			[name="app"]>slot>span
 				{
@@ -4809,6 +4921,8 @@ class tgEpgProgItemDefaults extends (0, _defaultsCommonJs.tgEpgDefaultsCommon) {
 			<!-- App -->
 				<div name="app">
 					<slot name="titleslot"></slot>
+					<slot name="genreslot" class="hide"></slot>
+					<div name="genrebox"></div>								
 				</div>
 			<!-- App Ende-->
 					`;

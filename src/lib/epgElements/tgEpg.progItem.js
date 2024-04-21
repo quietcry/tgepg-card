@@ -88,6 +88,17 @@ export class tgEpgProgItem extends tgControls
 	connectedCallback ()
 		{
 		var that=this;
+		let box=this.app.querySelector('div[name="genrebox"]')
+		let genres=this.app.querySelector('slot[name="genreslot"]').assignedElements()
+		let html=(genres[0])?genres[0].innerHTML:""	
+		genres=html.replace(/<!--.*?!-->/gm,"").replace(/[^\d|\s|(A-Z0-9)]+/gm,"")
+		genres=(genres != "")?genres.split(" "):[]
+
+		for (let genre of genres )
+			{
+			let gen=this._htmlToElement(`<div name="genre" style="background-color: var( --tgepg-genrecolor-${genre}-org, transparent) "></div>`)
+			box.appendChild(gen)
+		 	}
 		if (this.PROPS.run.connected === 0)
 		 	{
 			this.activateToolTipp()
